@@ -1,0 +1,726 @@
+{
+  "bbox": {
+    "max_lat": 23.5,
+    "max_lon": 109.5,
+    "min_lat": 8.5,
+    "min_lon": 102.0
+  },
+  "crs": "EPSG:4326",
+  "dataset": "aquasignal_aligned_v1",
+  "grid_res_deg": 0.25,
+  "months": {
+    "2015-01": {
+      "file": "aquasignal_2015-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-02": {
+      "file": "aquasignal_2015-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-03": {
+      "file": "aquasignal_2015-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-04": {
+      "file": "aquasignal_2015-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-05": {
+      "file": "aquasignal_2015-05.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-06": {
+      "file": "aquasignal_2015-06.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-07": {
+      "file": "aquasignal_2015-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-08": {
+      "file": "aquasignal_2015-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-09": {
+      "file": "aquasignal_2015-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-10": {
+      "file": "aquasignal_2015-10.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-11": {
+      "file": "aquasignal_2015-11.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2015-12": {
+      "file": "aquasignal_2015-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-01": {
+      "file": "aquasignal_2016-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-02": {
+      "file": "aquasignal_2016-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-03": {
+      "file": "aquasignal_2016-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-04": {
+      "file": "aquasignal_2016-04.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-05": {
+      "file": "aquasignal_2016-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-06": {
+      "file": "aquasignal_2016-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-07": {
+      "file": "aquasignal_2016-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-08": {
+      "file": "aquasignal_2016-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-09": {
+      "file": "aquasignal_2016-09.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-10": {
+      "file": "aquasignal_2016-10.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-11": {
+      "file": "aquasignal_2016-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2016-12": {
+      "file": "aquasignal_2016-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-01": {
+      "file": "aquasignal_2017-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-02": {
+      "file": "aquasignal_2017-02.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-03": {
+      "file": "aquasignal_2017-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-04": {
+      "file": "aquasignal_2017-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-05": {
+      "file": "aquasignal_2017-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-06": {
+      "file": "aquasignal_2017-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-07": {
+      "file": "aquasignal_2017-07.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-08": {
+      "file": "aquasignal_2017-08.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-09": {
+      "file": "aquasignal_2017-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-10": {
+      "file": "aquasignal_2017-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-11": {
+      "file": "aquasignal_2017-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2017-12": {
+      "file": "aquasignal_2017-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-01": {
+      "file": "aquasignal_2018-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-02": {
+      "file": "aquasignal_2018-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-03": {
+      "file": "aquasignal_2018-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-04": {
+      "file": "aquasignal_2018-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-05": {
+      "file": "aquasignal_2018-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-06": {
+      "file": "aquasignal_2018-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-07": {
+      "file": "aquasignal_2018-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-08": {
+      "file": "aquasignal_2018-08.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-09": {
+      "file": "aquasignal_2018-09.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-10": {
+      "file": "aquasignal_2018-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-11": {
+      "file": "aquasignal_2018-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2018-12": {
+      "file": "aquasignal_2018-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-01": {
+      "file": "aquasignal_2019-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-02": {
+      "file": "aquasignal_2019-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-03": {
+      "file": "aquasignal_2019-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-04": {
+      "file": "aquasignal_2019-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-05": {
+      "file": "aquasignal_2019-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-06": {
+      "file": "aquasignal_2019-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-07": {
+      "file": "aquasignal_2019-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-08": {
+      "file": "aquasignal_2019-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-09": {
+      "file": "aquasignal_2019-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-10": {
+      "file": "aquasignal_2019-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-11": {
+      "file": "aquasignal_2019-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2019-12": {
+      "file": "aquasignal_2019-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-01": {
+      "file": "aquasignal_2020-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-02": {
+      "file": "aquasignal_2020-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-03": {
+      "file": "aquasignal_2020-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-04": {
+      "file": "aquasignal_2020-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-05": {
+      "file": "aquasignal_2020-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-06": {
+      "file": "aquasignal_2020-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-07": {
+      "file": "aquasignal_2020-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-08": {
+      "file": "aquasignal_2020-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-09": {
+      "file": "aquasignal_2020-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-10": {
+      "file": "aquasignal_2020-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-11": {
+      "file": "aquasignal_2020-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2020-12": {
+      "file": "aquasignal_2020-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-01": {
+      "file": "aquasignal_2021-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-02": {
+      "file": "aquasignal_2021-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-03": {
+      "file": "aquasignal_2021-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-04": {
+      "file": "aquasignal_2021-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-05": {
+      "file": "aquasignal_2021-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-06": {
+      "file": "aquasignal_2021-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-07": {
+      "file": "aquasignal_2021-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-08": {
+      "file": "aquasignal_2021-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-09": {
+      "file": "aquasignal_2021-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-10": {
+      "file": "aquasignal_2021-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-11": {
+      "file": "aquasignal_2021-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2021-12": {
+      "file": "aquasignal_2021-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-01": {
+      "file": "aquasignal_2022-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-02": {
+      "file": "aquasignal_2022-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-03": {
+      "file": "aquasignal_2022-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-04": {
+      "file": "aquasignal_2022-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-05": {
+      "file": "aquasignal_2022-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-06": {
+      "file": "aquasignal_2022-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-07": {
+      "file": "aquasignal_2022-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-08": {
+      "file": "aquasignal_2022-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-09": {
+      "file": "aquasignal_2022-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-10": {
+      "file": "aquasignal_2022-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-11": {
+      "file": "aquasignal_2022-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2022-12": {
+      "file": "aquasignal_2022-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-01": {
+      "file": "aquasignal_2023-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-02": {
+      "file": "aquasignal_2023-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-03": {
+      "file": "aquasignal_2023-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-04": {
+      "file": "aquasignal_2023-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-05": {
+      "file": "aquasignal_2023-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-06": {
+      "file": "aquasignal_2023-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-07": {
+      "file": "aquasignal_2023-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-08": {
+      "file": "aquasignal_2023-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-09": {
+      "file": "aquasignal_2023-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-10": {
+      "file": "aquasignal_2023-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-11": {
+      "file": "aquasignal_2023-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2023-12": {
+      "file": "aquasignal_2023-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-01": {
+      "file": "aquasignal_2024-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-02": {
+      "file": "aquasignal_2024-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-03": {
+      "file": "aquasignal_2024-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-04": {
+      "file": "aquasignal_2024-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-05": {
+      "file": "aquasignal_2024-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T08:20:23.236513+00:00"
+    },
+    "2024-06": {
+      "file": "aquasignal_2024-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-07": {
+      "file": "aquasignal_2024-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-08": {
+      "file": "aquasignal_2024-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-09": {
+      "file": "aquasignal_2024-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-10": {
+      "file": "aquasignal_2024-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-11": {
+      "file": "aquasignal_2024-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2024-12": {
+      "file": "aquasignal_2024-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-01": {
+      "file": "aquasignal_2025-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-02": {
+      "file": "aquasignal_2025-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-03": {
+      "file": "aquasignal_2025-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-04": {
+      "file": "aquasignal_2025-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-05": {
+      "file": "aquasignal_2025-05.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-06": {
+      "file": "aquasignal_2025-06.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-07": {
+      "file": "aquasignal_2025-07.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-08": {
+      "file": "aquasignal_2025-08.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-09": {
+      "file": "aquasignal_2025-09.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-10": {
+      "file": "aquasignal_2025-10.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-11": {
+      "file": "aquasignal_2025-11.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2025-12": {
+      "file": "aquasignal_2025-12.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2026-01": {
+      "file": "aquasignal_2026-01.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:27:53.207579+00:00"
+    },
+    "2026-02": {
+      "file": "aquasignal_2026-02.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:27:53.207579+00:00"
+    },
+    "2026-03": {
+      "file": "aquasignal_2026-03.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:27:53.207579+00:00"
+    },
+    "2026-04": {
+      "file": "aquasignal_2026-04.parquet",
+      "grace_forward_filled": false,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    },
+    "2026-05": {
+      "file": "aquasignal_2026-05.parquet",
+      "grace_forward_filled": true,
+      "written_at": "2026-06-10T07:31:09.698780+00:00"
+    }
+  },
+  "updated_at": "2026-06-10T08:20:23.236513+00:00",
+  "variables": {
+    "evapotranspiration": {
+      "long_name": "Potential evaporation (ECMWF sign convention inverted to positive)",
+      "source": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+      "units": "mm/month"
+    },
+    "grace_anomaly": {
+      "long_name": "Liquid water equivalent thickness anomaly (2004-2009 baseline)",
+      "source": "TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4",
+      "units": "cm"
+    },
+    "precipitation": {
+      "long_name": "Total precipitation",
+      "source": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+      "units": "mm/month"
+    },
+    "sar_subsidence": {
+      "long_name": "Sentinel-1 VV monthly mean backscatter (subsidence proxy)",
+      "source": "COPERNICUS/S1_GRD",
+      "units": "dB"
+    },
+    "temperature": {
+      "long_name": "2 m air temperature",
+      "source": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+      "units": "degC"
+    }
+  }
+}
