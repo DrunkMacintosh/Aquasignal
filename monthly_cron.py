@@ -103,7 +103,7 @@ def score_observed(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Period]:
     bundle = joblib.load(DOWNSCALER_PATH)
     periods = pd.PeriodIndex(pd.to_datetime(frame["time"]), freq="M")
     latest = periods.max()
-    rows = frame[(periods == latest).values].dropna(subset=bundle["features"])
+    rows = frame[periods == latest].dropna(subset=bundle["features"])
     if rows.empty:
         raise RuntimeError(f"No scoreable rows for latest month {latest}")
     risk = np.clip(bundle["model"].predict(rows[bundle["features"]]), 0.0, 100.0)
