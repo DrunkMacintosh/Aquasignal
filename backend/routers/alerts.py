@@ -80,6 +80,33 @@ async def subscribe(
 
 
 @router.delete(
+    "/subscribe/{device_token}/{district_name}",
+    response_model=UnsubscribeResponse,
+    dependencies=[_user_guard],
+    summary="Unregister one district for a device",
+    description="Removes the given device's subscription to one district only.",
+)
+async def unsubscribe_district(
+    device_token: str = Path(min_length=8, max_length=512),
+    district_name: str = Path(min_length=1, max_length=120),
+    db: AsyncSession = Depends(get_db),
+) -> UnsubscribeResponse:
+    result = await db.execute(
+        delete(AlertSubscription).where(
+            AlertSubscription.device_token == device_token,
+            AlertSubscription.district_name == district_name,
+        )
+    )
+    await db.commit()
+    if result.rowcount == 0:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail="No subscription for this device and district",
+        )
+    return UnsubscribeResponse(device_token=device_token, removed=result.rowcount)
+
+
+@router.delete(
     "/subscribe/{device_token}",
     response_model=UnsubscribeResponse,
     dependencies=[_user_guard],

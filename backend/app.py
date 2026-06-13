@@ -22,7 +22,7 @@ from core.database import SessionFactory, engine
 from core.ratelimit import limiter
 from core.security import get_current_user
 from models.schemas import HealthResponse
-from routers import alerts, auth, export, forecast, risk
+from routers import alerts, auth, export, forecast, history, risk, satellite
 
 LOG = logging.getLogger("aquasignal.api")
 
@@ -81,6 +81,8 @@ app.include_router(auth.router)
 # /alerts/trigger authenticates with the internal token instead of a JWT.
 app.include_router(risk.router, dependencies=[Depends(get_current_user)])
 app.include_router(forecast.router, dependencies=[Depends(get_current_user)])
+app.include_router(history.router, dependencies=[Depends(get_current_user)])
+app.include_router(satellite.router, dependencies=[Depends(get_current_user)])
 app.include_router(export.router, dependencies=[Depends(get_current_user)])
 app.include_router(alerts.router)
 

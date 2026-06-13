@@ -78,6 +78,36 @@ _ALL_DISTRICTS_CURRENT_RISK = text("""
     GROUP BY d.name
 """)
 
+_CELL_HISTORY = text("""
+    SELECT rs.month AS month, rs.risk AS risk
+    FROM risk_scores rs
+    JOIN grid_cells c ON c.id = rs.cell_id
+    WHERE c.cell_code = :cell_code
+      AND rs.score_type = 'observed'
+      AND rs.month >= :cutoff
+    ORDER BY rs.month
+""")
+
+_DISTRICT_HISTORY = text(f"""
+    SELECT rs.month AS month,
+           SUM(rs.risk * w.weight) / NULLIF(SUM(w.weight), 0) AS risk
+    FROM ({_DISTRICT_WEIGHTS_SQL}) w
+    JOIN risk_scores rs ON rs.cell_id = w.cell_id
+    WHERE rs.score_type = 'observed' AND rs.month >= :cutoff
+    GROUP BY rs.month
+    ORDER BY rs.month
+""")
+
+# Overlap weights with centroids, for joining against the satellite parquets
+# (which are keyed by cell centroid lat/lon).
+_DISTRICT_CENTROID_WEIGHTS = text(f"""
+    SELECT gc.centroid_lat AS centroid_lat,
+           gc.centroid_lon AS centroid_lon,
+           w.weight AS weight
+    FROM ({_DISTRICT_WEIGHTS_SQL}) w
+    JOIN grid_cells gc ON gc.id = w.cell_id
+""")
+
 _DISTRICT_TOP_CELLS = text(f"""
     SELECT w.cell_code AS cell_code,
            gc.centroid_lat AS centroid_lat,
@@ -138,6 +168,32 @@ async def all_districts_current_risk(
 ) -> dict[str, float]:
     result = await db.execute(_ALL_DISTRICTS_CURRENT_RISK, {"month": month})
     return {row.district_name: float(row.risk) for row in result if row.risk is not None}
+
+
+async def cell_history(
+    db: AsyncSession, cell_code: str, cutoff: date
+) -> list[Row[Any]]:
+    result = await db.execute(_CELL_HISTORY, {"cell_code": cell_code, "cutoff": cutoff})
+    return list(result.all())
+
+
+async def district_history(
+    db: AsyncSession, district: str, cutoff: date
+) -> list[Row[Any]]:
+    result = await db.execute(
+        _DISTRICT_HISTORY, {"district": district, "cutoff": cutoff}
+    )
+    return list(result.all())
+
+
+async def district_centroid_weights(
+    db: AsyncSession, district: str
+) -> list[tuple[float, float, float]]:
+    result = await db.execute(_DISTRICT_CENTROID_WEIGHTS, {"district": district})
+    return [
+        (float(row.centroid_lat), float(row.centroid_lon), float(row.weight))
+        for row in result
+    ]
 
 
 async def district_top_cells(

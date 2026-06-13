@@ -6,13 +6,25 @@ monthly aggregates and a day component would imply false precision.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+)
 
 RiskLevel = Literal["low", "medium", "high", "critical"]
 TrendLabel = Literal["improving", "stable", "worsening"]
 MONTH_PATTERN = r"^\d{4}-\d{2}$"
+
+# Emails are normalized to lowercase at the API boundary so "Officer@X" and
+# "officer@x" can never become two distinct accounts, and login stays
+# case-insensitive regardless of how the address was typed.
+NormalizedEmail = Annotated[EmailStr, AfterValidator(str.lower)]
 
 
 # --------------------------------------------------------------------------- #
@@ -21,7 +33,9 @@ MONTH_PATTERN = r"^\d{4}-\d{2}$"
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(description="Registered water-authority account email.")
+    email: NormalizedEmail = Field(
+        description="Registered water-authority account email."
+    )
     password: str = Field(
         min_length=1,
         max_length=72,
@@ -35,6 +49,30 @@ class TokenResponse(BaseModel):
     expires_in: int = Field(description="Token lifetime in seconds (24 h).")
 
 
+class RegisterRequest(BaseModel):
+    email: NormalizedEmail = Field(
+        description="Work email; becomes the login identifier."
+    )
+    password: str = Field(
+        min_length=12,
+        max_length=72,
+        description=(
+            "At least 12 characters (same policy as scripts/create_user.py); "
+            "bcrypt caps input at 72 bytes."
+        ),
+    )
+    full_name: str = Field(default="", max_length=255)
+
+    @field_validator("password")
+    @classmethod
+    def _password_fits_bcrypt(cls, value: str) -> str:
+        # max_length counts characters; multi-byte characters can still blow
+        # bcrypt's 72-BYTE cap, which verify_password treats as a failed match.
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("password must be at most 72 bytes")
+        return value
+
+
 # --------------------------------------------------------------------------- #
 # Risk map (GeoJSON)
 # --------------------------------------------------------------------------- #
@@ -44,6 +82,13 @@ class PolygonGeometry(BaseModel):
     type: Literal["Polygon"]
     coordinates: list[list[list[float]]] = Field(
         description="GeoJSON polygon rings, [lon, lat] order (RFC 7946)."
+    )
+
+
+class MultiPolygonGeometry(BaseModel):
+    type: Literal["MultiPolygon"]
+    coordinates: list[list[list[list[float]]]] = Field(
+        description="GeoJSON multipolygon rings, [lon, lat] order (RFC 7946)."
     )
 
 
@@ -69,7 +114,9 @@ class CellRiskProperties(BaseModel):
 
 class RiskFeature(BaseModel):
     type: Literal["Feature"] = "Feature"
-    geometry: PolygonGeometry
+    # MultiPolygon once clipped to the coastline; plain Polygon as fallback
+    # for unclipped cells.
+    geometry: MultiPolygonGeometry | PolygonGeometry
     properties: CellRiskProperties
 
 
@@ -79,6 +126,103 @@ class RiskMapResponse(BaseModel):
         pattern=MONTH_PATTERN, description="Month the scores belong to."
     )
     features: list[RiskFeature]
+
+
+class DistrictRiskProperties(BaseModel):
+    district_name: str = Field(description="Name as stored in `districts`.")
+    has_data: bool = Field(
+        description="False when no intersecting cell has a current risk score."
+    )
+    current_risk: float | None = Field(
+        default=None, ge=0, le=100,
+        description="Area-weighted mean of intersecting cells for the current month.",
+    )
+    risk_level: RiskLevel | None = None
+    trend: TrendLabel | None = None
+    cells_in_district: int = Field(
+        description="Grid cells spatially intersecting the district."
+    )
+
+
+class DistrictRiskFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    geometry: MultiPolygonGeometry
+    properties: DistrictRiskProperties
+
+
+class DistrictRiskMapResponse(BaseModel):
+    type: Literal["FeatureCollection"] = "FeatureCollection"
+    month: str = Field(
+        pattern=MONTH_PATTERN, description="Month the scores belong to."
+    )
+    features: list[DistrictRiskFeature]
+
+
+# --------------------------------------------------------------------------- #
+# History (observed risk time series)
+# --------------------------------------------------------------------------- #
+
+
+class HistoryPoint(BaseModel):
+    month: str = Field(pattern=MONTH_PATTERN)
+    risk: float = Field(ge=0, le=100)
+    risk_level: RiskLevel
+
+
+class CellHistoryResponse(BaseModel):
+    cell_id: str
+    history: list[HistoryPoint] = Field(description="Ascending by month.")
+
+
+class DistrictHistoryResponse(BaseModel):
+    district_name: str
+    aggregation: Literal["area_weighted_mean"] = "area_weighted_mean"
+    history: list[HistoryPoint] = Field(description="Ascending by month.")
+
+
+# --------------------------------------------------------------------------- #
+# Satellite observations (raw model inputs, read from the parquet store)
+# --------------------------------------------------------------------------- #
+
+
+class SatelliteMonth(BaseModel):
+    month: str = Field(pattern=MONTH_PATTERN)
+    grace_anomaly: float | None = Field(
+        default=None,
+        description=(
+            "GRACE-FO water-storage anomaly vs the long-term mean "
+            "(cm liquid water equivalent)."
+        ),
+    )
+    sar_subsidence: float | None = Field(
+        default=None,
+        description=(
+            "Sentinel-1 VV radar backscatter (dB) — an indirect proxy for "
+            "subsidence/surface wetness, NOT a measured displacement rate "
+            "(true subsidence needs InSAR; see pipeline.py)."
+        ),
+    )
+    precipitation: float | None = Field(
+        default=None, description="Monthly precipitation (mm, ERA5-Land)."
+    )
+    evapotranspiration: float | None = Field(
+        default=None,
+        description="Monthly potential evapotranspiration (mm, ERA5-Land).",
+    )
+    temperature: float | None = Field(
+        default=None, description="2 m air temperature (°C, ERA5-Land)."
+    )
+
+
+class CellSatelliteResponse(BaseModel):
+    cell_id: str
+    observations: list[SatelliteMonth] = Field(description="Ascending by month.")
+
+
+class DistrictSatelliteResponse(BaseModel):
+    district_name: str
+    aggregation: Literal["area_weighted_mean"] = "area_weighted_mean"
+    observations: list[SatelliteMonth] = Field(description="Ascending by month.")
 
 
 # --------------------------------------------------------------------------- #

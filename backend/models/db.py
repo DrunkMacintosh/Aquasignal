@@ -93,6 +93,11 @@ class GridCell(Base):
     geom: Mapped[WKBElement] = mapped_column(
         Geometry(geometry_type="POLYGON", srid=SRID_WGS84)
     )
+    # Cell clipped to land (union of districts); NULL = not clipped / fully
+    # offshore. Backfilled by scripts/clip_cells_to_land.py.
+    geom_land: Mapped[WKBElement | None] = mapped_column(
+        Geometry(geometry_type="MULTIPOLYGON", srid=SRID_WGS84, spatial_index=False)
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

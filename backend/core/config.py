@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     downscaler_path: Path = _REPO_ROOT / "downscaler.pkl"
     forecaster_path: Path = _REPO_ROOT / "forecaster.pt"
 
+    # --- pipeline output: monthly satellite feature parquets ---
+    processed_data_dir: Path = _REPO_ROOT / "data" / "processed"
+
 
 @lru_cache
 def get_settings() -> Settings:
