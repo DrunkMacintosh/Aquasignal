@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import WarmupBanner from './components/WarmupBanner.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MapPage from './pages/MapPage.jsx';
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <WarmupBanner />
         <Shell />
       </AuthProvider>
     </QueryClientProvider>

@@ -9,6 +9,7 @@ loudly instead of serving requests with a blank JWT secret.
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/core/config.py -> backend/ -> repo root (where the .pkl/.pt live)
@@ -27,6 +28,17 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://aquasignal:aquasignal@localhost:5432/aquasignal"
     )
+
+    @field_validator("database_url")
+    @classmethod
+    def _force_asyncpg_driver(cls, value: str) -> str:
+        # Hosted providers (Supabase, Render dashboards) hand out plain
+        # postgresql:// strings; the backend always speaks asyncpg, so
+        # normalise here instead of making every deployer remember the
+        # +asyncpg suffix.
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
 
     # --- auth (no defaults: fail fast if absent) ---
     jwt_secret_key: str

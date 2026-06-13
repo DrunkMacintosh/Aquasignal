@@ -1,0 +1,38 @@
+# Render Blueprint — deploy via https://dashboard.render.com → New + → Blueprint.
+# Free plan: 512 MB RAM, spins down after 15 min idle (the keepalive workflow
+# and the frontend's warm-up banner both handle that), 750 instance-hours/mo
+# (enough to keep ONE service awake 24/7).
+services:
+  - type: web
+    name: aquasignal-api
+    runtime: python
+    plan: free
+    # Build/start run inside backend/, but Render clones the whole repo, so
+    # repo-root assets (downscaler.pkl, forecaster.pt, data/processed/) are
+    # present at ../ exactly where backend/core/config.py expects them.
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # --- required secrets: set values in the Render dashboard ------------
+      - key: AQUASIGNAL_DATABASE_URL
+        sync: false # Supabase SESSION POOLER string (IPv4) — see DEPLOY.md §1
+      - key: AQUASIGNAL_CORS_ORIGINS
+        sync: false # JSON list with your Vercel URL, e.g. ["https://aquasignal.vercel.app"]
+      - key: AQUASIGNAL_JWT_SECRET_KEY
+        generateValue: true # Render mints a random secret on first deploy
+      - key: AQUASIGNAL_INTERNAL_API_TOKEN
+        generateValue: true # copy into the GitHub secret of the same name (cron uses it)
+      # --- optional ---------------------------------------------------------
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false # base64 of the service-account JSON; omit to run without push alerts
+      - key: HF_REPO_ID
+        sync: false # only when models live on Hugging Face instead of the repo
+      - key: HF_TOKEN
+        sync: false # only for a private HF repo
+      # NOTE: EARTHDATA_USER/PASS and the Earth Engine credentials are NOT set
+      # here on purpose — the API never ingests satellite data. They belong
+      # only to the GitHub Actions cron (smaller blast radius if leaked).

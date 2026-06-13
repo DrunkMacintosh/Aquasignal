@@ -4,6 +4,7 @@
 import axios from 'axios';
 import { getDeviceToken } from '../lib/deviceToken.js';
 import { filenameFromDisposition } from '../lib/download.js';
+import { markAwake, markWaking } from '../lib/warmup.js';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -25,9 +26,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 502/503/504 (or no response at all) while the free-tier instance
+// cold-starts: flag it so WarmupBanner can take over; any successful
+// response clears the flag.
+const GATEWAY_ERRORS = new Set([502, 503, 504]);
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    markAwake();
+    return response;
+  },
   (error) => {
+    if (!error.response || GATEWAY_ERRORS.has(error.response.status)) {
+      markWaking();
+    }
     // Only treat 401 as "session died" when we *had* a token — a failed login
     // attempt must not bounce the user out of the login form.
     if (error.response?.status === 401 && accessToken && onUnauthorized) {
@@ -36,6 +48,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/** Unauthenticated liveness probe used by the warm-up banner. */
+export function pingHealth() {
+  return api.get('/health');
+}
 
 // ---------------------------------------------------------------------------
 // Auth

@@ -1,0 +1,91 @@
+name: Bootstrap database (run once)
+
+# One-click first-time setup for a fresh Supabase project. Render's free plan
+# has no shell access, so everything that needs to run "once, by hand" runs
+# here instead. Safe to re-run: every step is idempotent (upserts /
+# ON CONFLICT / alembic head).
+#
+# Order matters:
+#   1. alembic upgrade head      -> schema (also runs on every Render boot)
+#   2. monthly_cron.py           -> full pipeline: parquets, grid cells, scores
+#   3. seed_districts.py --all   -> province boundaries
+#   4. clip_cells_to_land.py     -> grid cells clipped to coast/border
+#                                   (needs grid cells AND districts, hence last)
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: monthly-pipeline # never overlap with the scheduled cron
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install all dependencies (backend + pipeline + models)
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r requirements.txt -r requirements-models.txt
+
+      - name: Write Earth Engine service-account key
+        env:
+          GEE_PRIVATE_KEY_JSON: ${{ secrets.GEE_PRIVATE_KEY_JSON }}
+        run: printf '%s' "$GEE_PRIVATE_KEY_JSON" > /tmp/gee-key.json
+
+      - name: 1/4 Apply database schema
+        working-directory: backend
+        env:
+          AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AQUASIGNAL_JWT_SECRET_KEY: bootstrap-only-not-used
+          AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
+        run: alembic upgrade head
+
+      - name: 2/4 Run the full pipeline (fetch, score, store)
+        env:
+          AQUASIGNAL_DSN: ${{ secrets.DATABASE_URL }}
+          EARTHDATA_USER: ${{ secrets.EARTHDATA_USER }}
+          EARTHDATA_PASS: ${{ secrets.EARTHDATA_PASS }}
+          EE_SERVICE_ACCOUNT: ${{ secrets.EE_SERVICE_ACCOUNT }}
+          EE_PRIVATE_KEY_FILE: /tmp/gee-key.json
+          GEE_PROJECT: ${{ secrets.GEE_PROJECT }}
+        run: python monthly_cron.py --skip-trigger
+
+      - name: 3/4 Seed province boundaries
+        working-directory: backend
+        env:
+          AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AQUASIGNAL_JWT_SECRET_KEY: bootstrap-only-not-used
+          AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
+        run: python scripts/seed_districts.py ../data/boundaries/geoBoundaries-VNM-ADM1_simplified.geojson --all
+
+      - name: 4/4 Clip grid cells to land
+        working-directory: backend
+        env:
+          AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AQUASIGNAL_JWT_SECRET_KEY: bootstrap-only-not-used
+          AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
+        run: python scripts/clip_cells_to_land.py
+
+      - name: Commit pipeline output
+        run: |
+          git config user.name "aquasignal-bootstrap"
+          git config user.email "cron@users.noreply.github.com"
+          git add data/processed
+          if git diff --staged --quiet; then
+            echo "No new pipeline output to commit."
+          else
+            git commit -m "chore(data): bootstrap pipeline output"
+            git push
+          fi

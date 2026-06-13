@@ -1,0 +1,42 @@
+name: Keep free tiers awake
+
+# Two rhythms in one workflow, told apart by github.event.schedule:
+#   */14 min  -> ping Render /health so the API never spins down
+#                (free plan sleeps after 15 idle minutes; 750 free
+#                instance-hours/month cover one always-on service)
+#   every 3 d -> SELECT 1 against Supabase (free projects pause after
+#                ~7 days without traffic)
+# Honest caveats: GitHub schedules have best-effort timing (delays of a few
+# minutes are normal), so an occasional cold start can still slip through —
+# the frontend's warm-up banner covers exactly that case. Scheduled minutes
+# are free on PUBLIC repos; on a private repo this cadence (~3,000 runs/mo)
+# would exhaust the 2,000-minute free allowance.
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"
+    - cron: "0 0 */3 * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping-render:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/14 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: GET /health
+        env:
+          RENDER_URL: ${{ vars.RENDER_URL }}
+        run: |
+          curl --silent --show-error --fail --max-time 60 \
+            --retry 2 --retry-delay 5 "$RENDER_URL/health"
+
+  ping-supabase:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 */3 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: SELECT 1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: psql "$DATABASE_URL" -c 'SELECT 1'

@@ -1,0 +1,89 @@
+name: Monthly pipeline
+
+on:
+  schedule:
+    # 5th of each month, 00:00 UTC — GRACE-FO publishes with ~2 month lag,
+    # so the 5th reliably has the newest available month.
+    - cron: "0 0 5 * *"
+  workflow_dispatch: {} # manual re-run after a failure
+
+concurrency:
+  group: monthly-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write # pushes the updated parquet store back to the repo
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install pipeline + model dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-models.txt
+
+      - name: Write Earth Engine service-account key
+        env:
+          GEE_PRIVATE_KEY_JSON: ${{ secrets.GEE_PRIVATE_KEY_JSON }}
+        run: printf '%s' "$GEE_PRIVATE_KEY_JSON" > /tmp/gee-key.json
+
+      - name: Wake the API before the run (alert trigger needs it)
+        env:
+          RENDER_URL: ${{ vars.RENDER_URL }}
+        run: |
+          curl --silent --show-error --fail --retry 10 --retry-delay 10 \
+            --retry-all-errors --max-time 90 "$RENDER_URL/health" || true
+
+      - name: Run monthly_cron.py
+        env:
+          AQUASIGNAL_DSN: ${{ secrets.DATABASE_URL }}
+          AQUASIGNAL_API_URL: ${{ vars.RENDER_URL }}
+          AQUASIGNAL_INTERNAL_API_TOKEN: ${{ secrets.AQUASIGNAL_INTERNAL_API_TOKEN }}
+          EARTHDATA_USER: ${{ secrets.EARTHDATA_USER }}
+          EARTHDATA_PASS: ${{ secrets.EARTHDATA_PASS }}
+          EE_SERVICE_ACCOUNT: ${{ secrets.EE_SERVICE_ACCOUNT }}
+          EE_PRIVATE_KEY_FILE: /tmp/gee-key.json
+          GEE_PROJECT: ${{ secrets.GEE_PROJECT }}
+        run: |
+          set -o pipefail
+          python monthly_cron.py 2>&1 | tee cron.log
+
+      # The API serves /satellite/* straight from data/processed/, and Render
+      # only sees what is in git — so the new month's parquet + manifest must
+      # be committed. The push also triggers a Render redeploy, which ships
+      # the fresh data to the API.
+      - name: Commit updated parquet store
+        run: |
+          git config user.name "aquasignal-cron"
+          git config user.email "cron@users.noreply.github.com"
+          git add data/processed
+          if git diff --staged --quiet; then
+            echo "No new pipeline output to commit."
+          else
+            git commit -m "chore(data): monthly pipeline output $(date -u +%Y-%m)"
+            git push
+          fi
+
+      - name: Notify Discord on failure
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL not set — skipping notification."
+            exit 0
+          fi
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          tail -c 100000 cron.log > cron-tail.log 2>/dev/null || echo "(no log captured)" > cron-tail.log
+          curl --silent --show-error --fail \
+            -F "payload_json={\"content\":\"❌ **AquaSignal monthly pipeline failed** — $RUN_URL\"}" \
+            -F "files[0]=@cron-tail.log" \
+            "$DISCORD_WEBHOOK_URL"

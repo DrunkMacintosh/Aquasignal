@@ -21,6 +21,7 @@ from core.config import get_settings
 from core.database import SessionFactory, engine
 from core.ratelimit import limiter
 from core.security import get_current_user
+from models.download import ensure_models
 from models.schemas import HealthResponse
 from routers import alerts, auth, export, forecast, history, risk, satellite
 
@@ -46,6 +47,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Settings are validated here (fail fast on missing secrets); the DB check
     # is advisory only -- /health keeps reporting status if the DB comes up later.
     get_settings()
+    # Guard for environments that skip start.sh: fetch HF-hosted model
+    # artifacts if configured (no-op with repo-bundled files / files present).
+    ensure_models()
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
