@@ -1,0 +1,48 @@
+import { useState } from 'react';
+import { useCriticalDistricts } from '../api/hooks.js';
+
+/**
+ * Persistent banner shown while any subscribed district sits in the critical
+ * band. District names open the detail panel directly.
+ */
+export default function AlertBanner({ onOpenDistrict }) {
+  const { critical } = useCriticalDistricts();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (critical.length === 0 || dismissed) return null;
+
+  return (
+    <div
+      role="alert"
+      className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-risk-critical/40 bg-risk-critical px-4 py-2.5 text-white shadow-card animate-fade-up"
+    >
+      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em]">
+        ⚠ Critical risk
+      </span>
+      <span className="text-sm">
+        {critical.length === 1 ? 'This district needs attention:' : 'These districts need attention:'}
+      </span>
+      <span className="flex flex-wrap gap-1.5">
+        {critical.map((district) => (
+          <button
+            key={district}
+            type="button"
+            onClick={() => onOpenDistrict(district)}
+            aria-label={`Open ${district} details`}
+            className="rounded-md bg-white/15 px-2.5 py-0.5 text-sm font-semibold underline-offset-2 transition-colors hover:bg-white/30 focus-visible:outline-white"
+          >
+            {district}
+          </button>
+        ))}
+      </span>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss critical risk banner"
+        className="ml-auto rounded-md px-2 py-0.5 text-lg leading-none hover:bg-white/20 focus-visible:outline-white"
+      >
+        ×
+      </button>
+    </div>
+  );
+}

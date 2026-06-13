@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-paper font-body text-ink antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid theme('colors.water.DEFAULT');
+    outline-offset: 2px;
+  }
+  ::selection {
+    @apply bg-water/20;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-ink/10 bg-surface shadow-card;
+  }
+  .microlabel {
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft;
+  }
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-ink/[0.07];
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 animate-shimmer;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    background-size: 400px 100%;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-water px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-water-deep focus-visible:outline-water disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink/15 bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+.panel-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(28, 43, 51, 0.18);
+  border-radius: 4px;
+}
+
+/* Keep MapLibre UI quiet so it sits inside the ledger aesthetic. */
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
