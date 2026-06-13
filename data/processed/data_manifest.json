@@ -695,7 +695,7 @@
       "written_at": "2026-06-10T07:31:09.698780+00:00"
     }
   },
-  "updated_at": "2026-06-10T08:20:23.236513+00:00",
+  "updated_at": "2026-06-13T11:32:49.043279+00:00",
   "variables": {
     "evapotranspiration": {
       "long_name": "Potential evaporation (ECMWF sign convention inverted to positive)",
