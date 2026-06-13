@@ -1,11 +1,27 @@
-import { NO_DATA_COLOR, RISK_BANDS } from '../lib/risk.js';
+import { NO_DATA_COLOR, RISK_BANDS, riskRampGradient } from '../lib/risk.js';
 
-/** Survey-sheet style map key: colour swatch + text label + numeric range. */
+/** Survey-sheet style map key: a continuous ramp bar plus the named bands. */
 export default function MapLegend() {
   return (
     <section className="card w-48 p-3" aria-label="Map legend: well-failure risk bands">
       <h2 className="microlabel">Well-failure risk</h2>
-      <dl className="mt-2 space-y-1.5">
+      {/* The map shades continuously, so lead with the ramp; the named bands
+          below give the exact thresholds the tooltip and chips report. */}
+      <div className="mt-2">
+        <div
+          className="h-2.5 w-full rounded-full border border-ink/15"
+          style={{ backgroundImage: riskRampGradient() }}
+          aria-hidden="true"
+        />
+        <div className="mt-1 flex justify-between font-mono text-[10px] text-ink-faint">
+          <span>0</span>
+          <span>25</span>
+          <span>50</span>
+          <span>75</span>
+          <span>100</span>
+        </div>
+      </div>
+      <dl className="mt-2.5 space-y-1.5">
         {RISK_BANDS.map((band) => (
           <div key={band.level} className="flex items-center gap-2.5">
             <dt className="flex items-center gap-2.5">

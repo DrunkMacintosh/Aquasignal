@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
+  RISK_BANDS,
+  RISK_RAMP,
   formatCellName,
   formatMonth,
   riskBand,
+  riskRampGradient,
   shortMonth,
   trendFromHistory,
   trendInfo,
@@ -25,6 +28,37 @@ describe('riskBand', () => {
     expect(riskBand(140).level).toBe('critical');
     expect(riskBand('not a number').level).toBe('low');
     expect(riskBand(undefined).level).toBe('low');
+  });
+});
+
+describe('RISK_RAMP', () => {
+  test('pins band boundaries to the band colours so the legend cannot drift', () => {
+    const at = (stop) => RISK_RAMP.find((s) => s.stop === stop)?.color;
+    expect(at(0)).toBe(RISK_BANDS[0].color);
+    expect(at(25)).toBe(RISK_BANDS[1].color);
+    expect(at(50)).toBe(RISK_BANDS[2].color);
+    expect(at(75)).toBe(RISK_BANDS[3].color);
+  });
+
+  test('stops are strictly ascending and within range (MapLibre interpolate requires it)', () => {
+    for (let i = 1; i < RISK_RAMP.length; i += 1) {
+      expect(RISK_RAMP[i].stop).toBeGreaterThan(RISK_RAMP[i - 1].stop);
+    }
+    expect(RISK_RAMP[0].stop).toBe(0);
+    expect(RISK_RAMP[RISK_RAMP.length - 1].stop).toBe(100);
+  });
+});
+
+describe('riskRampGradient', () => {
+  test('builds a CSS linear-gradient spanning the ramp', () => {
+    const gradient = riskRampGradient();
+    expect(gradient).toMatch(/^linear-gradient\(to right, /);
+    expect(gradient).toContain(`${RISK_BANDS[0].color} 0%`);
+    expect(gradient).toContain('#6A0000 100%');
+  });
+
+  test('honours a custom direction', () => {
+    expect(riskRampGradient('to top')).toMatch(/^linear-gradient\(to top, /);
   });
 });
 

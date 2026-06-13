@@ -23,6 +23,30 @@ export function riskBand(score) {
   return RISK_BANDS.findLast((band) => clamped >= band.min) ?? RISK_BANDS[0];
 }
 
+// Continuous colour ramp for the map choropleth. A `step` fill paints every
+// district in a band the same flat colour, so neighbouring provinces look
+// identical; this ramp interpolates between stops so each score reads as its
+// own shade. The boundary stops (0/25/50/75) are pinned to RISK_BANDS so the
+// legend swatches and band chips stay truthful — only the in-between stops are
+// new, and they exist purely to add within-band contrast.
+export const RISK_RAMP = [
+  { stop: 0, color: RISK_BANDS[0].color }, // low
+  { stop: 12.5, color: '#9CCC3C' },
+  { stop: 25, color: RISK_BANDS[1].color }, // medium
+  { stop: 37.5, color: '#FF9800' },
+  { stop: 50, color: RISK_BANDS[2].color }, // high
+  { stop: 62.5, color: '#E53935' },
+  { stop: 75, color: RISK_BANDS[3].color }, // critical
+  { stop: 87.5, color: '#8E0E15' },
+  { stop: 100, color: '#6A0000' },
+];
+
+/** CSS `linear-gradient(...)` mirroring RISK_RAMP, for the legend ramp bar. */
+export function riskRampGradient(direction = 'to right') {
+  const stops = RISK_RAMP.map(({ stop, color }) => `${color} ${stop}%`).join(', ');
+  return `linear-gradient(${direction}, ${stops})`;
+}
+
 export const TRENDS = {
   worsening: { arrow: '↑', label: 'Worsening', tone: 'bad' },
   stable: { arrow: '→', label: 'Stable', tone: 'neutral' },

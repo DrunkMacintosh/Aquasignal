@@ -1,6 +1,8 @@
 // MapLibre GL choropleth with two layer sets sharing one map instance:
 //   districts — real province boundaries, area-weighted risk (default view)
 //   grid      — the model's native 0.25° cells (detail view)
+//   roads     — no choropleth; swaps the satellite basemap for an Esri street
+//               basemap so every road and highway reads clearly
 // on a keyless satellite basemap (Esri World Imagery + Esri reference labels;
 // attribution is a usage requirement and surfaces via the control).
 //
@@ -12,7 +14,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   NO_DATA_COLOR,
-  RISK_BANDS,
+  RISK_RAMP,
   formatCellName,
   formatMonth,
   riskBand,
@@ -39,15 +41,35 @@ const SATELLITE_STYLE = {
       maxzoom: 19,
       attribution: 'Boundaries &amp; places © Esri',
     },
+    'esri-street': {
+      type: 'raster',
+      tiles: [ESRI_TILE('World_Street_Map')],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: 'Streets © Esri, HERE, Garmin, OpenStreetMap contributors',
+    },
   },
   layers: [
     { id: 'basemap-imagery', type: 'raster', source: 'esri-imagery' },
+    // Street basemap for the roads view. Hidden until selected; toggled
+    // against the satellite layers in applyViewVisibility(). Sits below the
+    // reference anchor so the risk choropleth still renders above it.
+    {
+      id: 'basemap-street',
+      type: 'raster',
+      source: 'esri-street',
+      layout: { visibility: 'none' },
+    },
     // Risk layers are inserted before this one, so place names and admin
     // boundaries stay readable above the choropleth.
     { id: 'basemap-reference', type: 'raster', source: 'esri-reference' },
   ],
 };
 const ANCHOR_LAYER_ID = 'basemap-reference';
+// Satellite basemap layers, hidden as a group when the roads view swaps in the
+// street basemap.
+const SATELLITE_BASEMAP_LAYERS = ['basemap-imagery', 'basemap-reference'];
+const STREET_BASEMAP_LAYER = 'basemap-street';
 
 const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
 const MEKONG_DELTA_CENTER = [105.8, 9.8];
@@ -67,17 +89,18 @@ const DISTRICTS = {
   },
 };
 
-// step(current_risk): <25 green, <50 yellow, <75 orange, else red — derived
-// from RISK_BANDS so the legend and the paint expression cannot drift apart.
-// Null risk (district without scored cells) coalesces to -1 -> "no data" grey.
+// interpolate(current_risk): a continuous ramp (RISK_RAMP) so two districts in
+// the same band but with different scores read as different shades, instead of
+// one flat block colour. Stops are pinned at the 25/50/75 band boundaries, so
+// the colour at any threshold still matches the legend swatch. Null risk
+// (district without scored cells) coalesces to -1 -> "no data" grey; -1 sits
+// just below the 0 stop, a value real scores (0-100) never reach.
 const FILL_COLOR = [
-  'step',
+  'interpolate',
+  ['linear'],
   ['coalesce', ['get', 'current_risk'], -1],
-  NO_DATA_COLOR,
-  0, RISK_BANDS[0].color,
-  RISK_BANDS[1].min, RISK_BANDS[1].color,
-  RISK_BANDS[2].min, RISK_BANDS[2].color,
-  RISK_BANDS[3].min, RISK_BANDS[3].color,
+  -1, NO_DATA_COLOR,
+  ...RISK_RAMP.flatMap(({ stop, color }) => [stop, color]),
 ];
 const HOVER_OPACITY = [
   'case',
@@ -88,7 +111,7 @@ const HOVER_OPACITY = [
 export default function RiskMap({
   gridData,
   districtData,
-  view, // 'districts' | 'grid'
+  view, // 'districts' | 'grid' | 'roads'
   month,
   selectedCellId,
   selectedDistrict,
@@ -266,6 +289,10 @@ function applyViewVisibility(map, view) {
       map.setLayoutProperty(id, 'visibility', shown ? 'visible' : 'none');
     }
   };
+  // Basemap: satellite for the risk views, the street basemap for roads.
+  const isRoads = view === 'roads';
+  SATELLITE_BASEMAP_LAYERS.forEach((id) => setVisibility(id, !isRoads));
+  setVisibility(STREET_BASEMAP_LAYER, isRoads);
   Object.values(GRID.layers).forEach((id) => setVisibility(id, view === 'grid'));
   Object.values(DISTRICTS.layers).forEach((id) => setVisibility(id, view === 'districts'));
 }
