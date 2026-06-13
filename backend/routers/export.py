@@ -19,7 +19,7 @@ import matplotlib
 matplotlib.use("Agg")  # must precede the pyplot import
 import matplotlib.pyplot as plt  # noqa: E402
 from dateutil.relativedelta import relativedelta  # noqa: E402
-from fastapi import APIRouter, Depends, HTTPException, Path, status  # noqa: E402
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status  # noqa: E402
 from fastapi.responses import Response, StreamingResponse  # noqa: E402
 from reportlab.lib import colors  # noqa: E402
 from reportlab.lib.pagesizes import A4  # noqa: E402
@@ -45,6 +45,7 @@ from core.queries import (  # noqa: E402
     district_top_cells,
     latest_observed_month,
 )
+from core.ratelimit import EXPORT_RATE_LIMIT, limiter  # noqa: E402
 from core.scoring import (  # noqa: E402
     EXPORT_HISTORY_MONTHS,
     FORECAST_HORIZON_MONTHS,
@@ -100,7 +101,9 @@ async def _require_district_and_month(
     response_class=StreamingResponse,
     responses={200: {"content": {"text/csv": {}}}},
 )
+@limiter.limit(EXPORT_RATE_LIMIT)
 async def export_csv(
+    request: Request,  # required by slowapi to key the client IP
     district_name: str = Path(description="District name as stored in `districts`."),
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
@@ -245,7 +248,9 @@ def _build_pdf(
     response_class=Response,
     responses={200: {"content": {"application/pdf": {}}}},
 )
+@limiter.limit(EXPORT_RATE_LIMIT)
 async def export_pdf(
+    request: Request,  # required by slowapi to key the client IP
     district_name: str = Path(description="District name as stored in `districts`."),
     db: AsyncSession = Depends(get_db),
 ) -> Response:

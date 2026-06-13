@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from functools import partial
 
 import anyio
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from firebase_admin import messaging
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -23,6 +23,7 @@ from core.queries import (
     district_exists,
     latest_observed_month,
 )
+from core.ratelimit import READ_RATE_LIMIT, limiter
 from core.scoring import ALERT_HISTORY_LIMIT, risk_level
 from core.security import get_current_user, require_internal_token
 from models.db import AlertEvent, AlertSubscription
@@ -135,8 +136,11 @@ async def unsubscribe(
     summary="Recent alert events for a district",
     description="Last 30 alert events (newest first) with acknowledgement status.",
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def alert_history(
-    district_name: str, db: AsyncSession = Depends(get_db)
+    request: Request,  # required by slowapi to key the client IP
+    district_name: str = Path(min_length=1, max_length=120),
+    db: AsyncSession = Depends(get_db),
 ) -> list[AlertEventResponse]:
     if not await district_exists(db, district_name):
         raise HTTPException(

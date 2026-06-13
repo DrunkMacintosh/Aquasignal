@@ -8,7 +8,7 @@ latest scored month).
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,7 @@ from core.queries import (
     district_history,
     latest_observed_month,
 )
+from core.ratelimit import READ_RATE_LIMIT, limiter
 from core.scoring import EXPORT_HISTORY_MONTHS, risk_level
 from models.schemas import CellHistoryResponse, DistrictHistoryResponse, HistoryPoint
 
@@ -53,7 +54,9 @@ def _points(rows) -> list[HistoryPoint]:
         f"{EXPORT_HISTORY_MONTHS} scored months, ascending."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_district_history(
+    request: Request,  # required by slowapi to key the client IP
     district_name: str = Path(description="District name as stored in `districts`."),
     db: AsyncSession = Depends(get_db),
 ) -> DistrictHistoryResponse:
@@ -75,7 +78,9 @@ async def get_district_history(
         f"{EXPORT_HISTORY_MONTHS} scored months, ascending."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_cell_history(
+    request: Request,  # required by slowapi to key the client IP
     cell_id: str = Path(description="Cell code '<lat>_<lon>', e.g. '10.125_105.625'."),
     db: AsyncSession = Depends(get_db),
 ) -> CellHistoryResponse:

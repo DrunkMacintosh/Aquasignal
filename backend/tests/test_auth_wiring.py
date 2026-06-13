@@ -9,6 +9,7 @@ exactly the change that opened the dashboard to anonymous visitors.
 from fastapi.routing import APIRoute
 
 from app import app
+from core.ratelimit import limiter
 from core.security import get_current_user
 
 # Every read surface a visitor browses without an account.
@@ -60,3 +61,32 @@ def test_unsubscribing_requires_auth():
     assert _requires_user_auth(
         _route("/alerts/subscribe/{device_token}/{district_name}", "DELETE")
     )
+
+
+def _is_rate_limited(route: APIRoute) -> bool:
+    """True if the route's endpoint carries a slowapi static rate limit.
+
+    slowapi registers limited endpoints in ``limiter._route_limits`` keyed by
+    ``f"{module}.{func_name}"``; the @limiter.limit wrapper preserves the
+    original __module__/__name__ via functools.wraps, so the route's endpoint
+    resolves to the same key.
+    """
+    name = f"{route.endpoint.__module__}.{route.endpoint.__name__}"
+    return name in limiter._route_limits
+
+
+def test_public_reads_are_rate_limited():
+    # Public == anonymous, so every public read must be IP rate-limited or it
+    # is an unbounded abuse / resource-exhaustion surface (esp. /export).
+    data_routes = [
+        route
+        for route in app.routes
+        if isinstance(route, APIRoute) and route.path.startswith(PUBLIC_PREFIXES)
+    ]
+    assert data_routes, "expected risk/forecast/history/satellite/export routes"
+    for route in data_routes:
+        assert _is_rate_limited(route), f"{route.path} must be IP rate-limited"
+
+
+def test_public_alert_history_is_rate_limited():
+    assert _is_rate_limited(_route("/alerts/history/{district_name}", "GET"))

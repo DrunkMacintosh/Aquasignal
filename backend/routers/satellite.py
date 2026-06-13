@@ -9,12 +9,13 @@ from exactly the same cells. pandas work runs in a worker thread.
 from functools import partial
 
 import anyio
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.queries import district_centroid_weights, district_exists
+from core.ratelimit import READ_RATE_LIMIT, limiter
 from core.satellite import available_months, cell_series, weighted_series
 from models.db import GridCell
 from models.schemas import (
@@ -52,7 +53,9 @@ def _recent_months(count: int) -> list[str]:
         "Values can be null where a sensor has a gap."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_district_satellite(
+    request: Request,  # required by slowapi to key the client IP
     district_name: str = Path(description="District name as stored in `districts`."),
     months: int = _MONTHS_QUERY,
     db: AsyncSession = Depends(get_db),
@@ -80,7 +83,9 @@ async def get_district_satellite(
         "be null where a sensor has a gap (e.g. the GRACE/GRACE-FO bridge)."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_cell_satellite(
+    request: Request,  # required by slowapi to key the client IP
     cell_id: str = Path(description="Cell code '<lat>_<lon>', e.g. '10.125_105.625'."),
     months: int = _MONTHS_QUERY,
     db: AsyncSession = Depends(get_db),

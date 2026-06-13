@@ -6,7 +6,7 @@ model inference per-request would couple API latency to torch and make
 responses non-reproducible between deploys.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ from core.queries import (
     district_forecast,
     latest_observed_month,
 )
+from core.ratelimit import READ_RATE_LIMIT, limiter
 from core.scoring import FORECAST_HORIZON_MONTHS
 from models.db import GridCell, RiskScore, ScoreType
 from models.schemas import (
@@ -39,7 +40,9 @@ router = APIRouter(prefix="/forecast", tags=["forecast"])
         "cells count proportionally."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_district_forecast(
+    request: Request,  # required by slowapi to key the client IP
     district_name: str = Path(description="District name as stored in `districts`."),
     db: AsyncSession = Depends(get_db),
 ) -> DistrictForecastResponse:
@@ -82,7 +85,9 @@ async def get_district_forecast(
         "latest observed month."
     ),
 )
+@limiter.limit(READ_RATE_LIMIT)
 async def get_cell_forecast(
+    request: Request,  # required by slowapi to key the client IP
     cell_id: str = Path(description="Cell code '<lat>_<lon>', e.g. '10.125_105.625'."),
     db: AsyncSession = Depends(get_db),
 ) -> CellForecastResponse:
