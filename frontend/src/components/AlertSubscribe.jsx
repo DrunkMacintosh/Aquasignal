@@ -4,12 +4,14 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { subscribeAlert, unsubscribeDistrict } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { riskBand } from '../lib/risk.js';
 import { removeSubscription, setSubscription, useSubscriptions } from '../lib/subscriptions.js';
 
 const DEFAULT_THRESHOLD = 75;
 
 export default function AlertSubscribe({ district }) {
+  const { isAuthenticated, promptSignIn } = useAuth();
   const subscriptions = useSubscriptions();
   const savedThreshold = subscriptions[district];
   const isSubscribed = savedThreshold !== undefined;
@@ -35,6 +37,26 @@ export default function AlertSubscribe({ district }) {
   });
 
   const sliderId = `alert-threshold-${district.replace(/\W+/g, '-')}`;
+
+  // Viewing the data is open to everyone; only setting an alert needs an
+  // account. Anonymous visitors get a sign-in prompt in place of the toggle.
+  if (!isAuthenticated) {
+    return (
+      <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">
+        <p className="text-sm font-semibold">Get alerts for {district}</p>
+        <p className="mt-1 text-xs text-ink-soft">
+          Sign in to be notified when this district's risk crosses a threshold you choose.
+        </p>
+        <button
+          type="button"
+          onClick={promptSignIn}
+          className="btn-primary mt-3 w-full !py-2 text-sm"
+        >
+          Sign in to set alerts
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">

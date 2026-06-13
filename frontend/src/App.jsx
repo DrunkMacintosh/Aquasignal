@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WarmupBanner from './components/WarmupBanner.jsx';
+import AuthModal from './components/auth/AuthModal.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
-import LoginPage from './pages/LoginPage.jsx';
 import MapPage from './pages/MapPage.jsx';
 
 const queryClient = new QueryClient({
@@ -26,13 +26,22 @@ export default function App() {
 }
 
 function Shell() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isPromptOpen, closePrompt } = useAuth();
+  const wasAuthenticated = useRef(isAuthenticated);
 
-  // Drop all cached API data on sign-out so nothing leaks into the next
-  // session on a shared machine.
+  // Drop cached API data only on an actual sign-out (authenticated -> not), so
+  // a per-user view never lingers on a shared machine. We deliberately do NOT
+  // clear on the initial anonymous load — that would wipe freshly fetched
+  // public map data on first paint.
   useEffect(() => {
-    if (!isAuthenticated) queryClient.clear();
+    if (wasAuthenticated.current && !isAuthenticated) queryClient.clear();
+    wasAuthenticated.current = isAuthenticated;
   }, [isAuthenticated]);
 
-  return isAuthenticated ? <MapPage /> : <LoginPage />;
+  return (
+    <>
+      <MapPage />
+      {isPromptOpen && <AuthModal onClose={closePrompt} />}
+    </>
+  );
 }

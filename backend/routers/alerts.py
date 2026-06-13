@@ -1,7 +1,8 @@
 """Alert subscriptions, history, acknowledgement, and the cron trigger.
 
-User-facing endpoints require a JWT (router-level dependency is applied per
-endpoint here because /trigger authenticates with the internal token instead).
+Guards are applied per endpoint: subscribing, unsubscribing, and acknowledging
+require a JWT; GET /alerts/history is public (viewing past alerts needs no
+account); /trigger authenticates with the internal token instead.
 """
 
 import logging
@@ -131,7 +132,6 @@ async def unsubscribe(
 @router.get(
     "/history/{district_name}",
     response_model=list[AlertEventResponse],
-    dependencies=[_user_guard],
     summary="Recent alert events for a district",
     description="Last 30 alert events (newest first) with acknowledgement status.",
 )

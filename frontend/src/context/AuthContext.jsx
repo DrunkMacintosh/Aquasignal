@@ -28,7 +28,15 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null); // { email, expiresAt }
   const [isExpiring, setIsExpiring] = useState(false);
+  // Browsing AquaSignal needs no account; this flag drives the sign-in modal,
+  // which we only raise when a visitor chooses to set an alert (or taps the
+  // header's "Sign in"). State lives here so any component can trigger it
+  // without prop-drilling; App renders the modal itself (avoids a cycle).
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const timersRef = useRef([]);
+
+  const promptSignIn = useCallback(() => setIsPromptOpen(true), []);
+  const closePrompt = useCallback(() => setIsPromptOpen(false), []);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -93,17 +101,26 @@ export function AuthProvider({ children }) {
     };
   }, [signOut, clearTimers]);
 
+  // A successful sign-in/registration ends the prompt — the visitor lands back
+  // on whatever they were doing (e.g. the same district's alert toggle).
+  useEffect(() => {
+    if (session) setIsPromptOpen(false);
+  }, [session]);
+
   const value = useMemo(
     () => ({
       isAuthenticated: session !== null,
       email: session?.email ?? null,
       expiresAt: session?.expiresAt ?? null,
       isExpiring,
+      isPromptOpen,
+      promptSignIn,
+      closePrompt,
       signIn,
       signUp,
       signOut,
     }),
-    [session, isExpiring, signIn, signUp, signOut],
+    [session, isExpiring, isPromptOpen, promptSignIn, closePrompt, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

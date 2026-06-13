@@ -3,15 +3,17 @@
 Run locally:
     uvicorn app:app --reload --port 8000
 
-Public endpoints: /auth/login, /health, /docs. Everything else requires a
-JWT bearer token; POST /alerts/trigger requires the internal cron token.
+Public endpoints: all risk/forecast/history/satellite/export reads, plus
+/auth/login, /health, /docs and GET /alerts/history. Creating, changing, or
+acknowledging an alert requires a JWT bearer token; POST /alerts/trigger
+requires the internal cron token.
 """
 
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -20,7 +22,6 @@ from sqlalchemy import text
 from core.config import get_settings
 from core.database import SessionFactory, engine
 from core.ratelimit import limiter
-from core.security import get_current_user
 from models.download import ensure_models
 from models.schemas import HealthResponse
 from routers import alerts, auth, export, forecast, history, risk, satellite
@@ -38,7 +39,8 @@ Groundwater risk forecasting API for water-authority staff and field officers.
   and acknowledgement.
 * **Export** -- CSV time series and PDF district reports.
 
-Authenticate via `POST /auth/login`, then send `Authorization: Bearer <token>`.
+Browsing risk data is public. Authenticate via `POST /auth/login` and send
+`Authorization: Bearer <token>` only to create, change, or acknowledge alerts.
 """
 
 
@@ -81,13 +83,17 @@ app.add_middleware(
 
 # Public router (login is its own rate-limited gate).
 app.include_router(auth.router)
-# JWT-protected routers. alerts wires its guards per-endpoint because
-# /alerts/trigger authenticates with the internal token instead of a JWT.
-app.include_router(risk.router, dependencies=[Depends(get_current_user)])
-app.include_router(forecast.router, dependencies=[Depends(get_current_user)])
-app.include_router(history.router, dependencies=[Depends(get_current_user)])
-app.include_router(satellite.router, dependencies=[Depends(get_current_user)])
-app.include_router(export.router, dependencies=[Depends(get_current_user)])
+# Read endpoints are public: visitors can browse risk data, forecasts,
+# history, satellite series, and exports without an account. They stay
+# IP rate-limited (see core.ratelimit), so opening them is not unbounded.
+app.include_router(risk.router)
+app.include_router(forecast.router)
+app.include_router(history.router)
+app.include_router(satellite.router)
+app.include_router(export.router)
+# alerts wires its guards per-endpoint: subscribe / unsubscribe / acknowledge
+# require a JWT, GET /alerts/history is public, and /alerts/trigger uses the
+# internal cron token.
 app.include_router(alerts.router)
 
 

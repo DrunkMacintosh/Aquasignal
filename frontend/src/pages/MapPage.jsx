@@ -22,15 +22,17 @@ const VIEW_STORAGE_KEY = 'aquasignal.map-view';
 const VIEW_OPTIONS = [
   { value: 'districts', label: 'Districts' },
   { value: 'grid', label: 'Grid detail' },
+  { value: 'roads', label: 'Roads' },
 ];
 
 export default function MapPage() {
-  const [view, setView] = useState(() =>
-    localStorage.getItem(VIEW_STORAGE_KEY) === 'grid' ? 'grid' : 'districts',
-  );
+  const [view, setView] = useState(() => {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    return VIEW_OPTIONS.some((option) => option.value === stored) ? stored : 'districts';
+  });
   const districtMap = useDistrictRiskMap();
   const gridMap = useRiskMap(view === 'grid'); // heavy cell payload loads on demand
-  const { isExpiring, signOut } = useAuth();
+  const { isAuthenticated, isExpiring, promptSignIn, signOut } = useAuth();
   const [selection, setSelection] = useState(null);
 
   const active = view === 'grid' ? gridMap : districtMap;
@@ -72,11 +74,13 @@ export default function MapPage() {
             month={month}
             updatedAt={active.dataUpdatedAt}
             isFetching={districtMap.isFetching || gridMap.isFetching}
+            isAuthenticated={isAuthenticated}
             onRefresh={refresh}
+            onSignIn={promptSignIn}
             onSignOut={signOut}
           />
         </div>
-        {isExpiring && <SessionExpiryNotice onSignIn={signOut} />}
+        {isExpiring && <SessionExpiryNotice onSignIn={promptSignIn} />}
         {showStaleBanner && (
           <StaleDataBanner updatedAt={active.dataUpdatedAt} onRetry={refresh} />
         )}
@@ -85,7 +89,8 @@ export default function MapPage() {
 
       <div className="pointer-events-none absolute left-3 top-[4.75rem] z-10 flex flex-col gap-2 md:left-4 md:top-20 [&>*]:pointer-events-auto">
         <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={changeView} label="Map view" />
-        <MapLegend />
+        {/* The risk key only applies to the choropleth views, not the plain street map. */}
+        {view !== 'roads' && <MapLegend />}
       </div>
 
       {showHardError && <HardError error={active.error} onRetry={refresh} />}
@@ -111,7 +116,7 @@ function Brand() {
   );
 }
 
-function StatusCard({ month, updatedAt, isFetching, onRefresh, onSignOut }) {
+function StatusCard({ month, updatedAt, isFetching, isAuthenticated, onRefresh, onSignIn, onSignOut }) {
   const fetchedTime = updatedAt
     ? new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '—';
@@ -134,14 +139,25 @@ function StatusCard({ month, updatedAt, isFetching, onRefresh, onSignOut }) {
         </span>
         {isFetching ? 'Updating…' : 'Refresh'}
       </button>
-      <button
-        type="button"
-        onClick={onSignOut}
-        aria-label="Sign out"
-        className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink"
-      >
-        Sign out
-      </button>
+      {isAuthenticated ? (
+        <button
+          type="button"
+          onClick={onSignOut}
+          aria-label="Sign out"
+          className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink"
+        >
+          Sign out
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onSignIn}
+          aria-label="Sign in"
+          className="btn-secondary !px-3 !py-1.5 text-xs"
+        >
+          Sign in
+        </button>
+      )}
     </div>
   );
 }
