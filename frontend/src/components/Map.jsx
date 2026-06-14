@@ -13,8 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
-  NO_DATA_COLOR,
-  RISK_RAMP,
+  fillColorExpression,
   formatCellName,
   formatMonth,
   riskBand,
@@ -89,19 +88,10 @@ const DISTRICTS = {
   },
 };
 
-// interpolate(current_risk): a continuous ramp (RISK_RAMP) so two districts in
-// the same band but with different scores read as different shades, instead of
-// one flat block colour. Stops are pinned at the 25/50/75 band boundaries, so
-// the colour at any threshold still matches the legend swatch. Null risk
-// (district without scored cells) coalesces to -1 -> "no data" grey; -1 sits
-// just below the 0 stop, a value real scores (0-100) never reach.
-const FILL_COLOR = [
-  'interpolate',
-  ['linear'],
-  ['coalesce', ['get', 'current_risk'], -1],
-  -1, NO_DATA_COLOR,
-  ...RISK_RAMP.flatMap(({ stop, color }) => [stop, color]),
-];
+// fill-color (see fillColorExpression): the RISK_RAMP across an absolute 0-100
+// domain, so a shade always means the same score. The dense, hue-shifting top
+// half (red -> magenta -> violet -> near-black above 75) keeps Vietnam's
+// mostly-critical districts visually distinct.
 const HOVER_OPACITY = [
   'case',
   ['boolean', ['feature-state', 'hover'], false], 0.92,
@@ -253,7 +243,7 @@ function addRiskLayers(map, config, { outlineOpacity, outlineWidth }) {
       id: config.layers.fill,
       type: 'fill',
       source: config.source,
-      paint: { 'fill-color': FILL_COLOR, 'fill-opacity': HOVER_OPACITY },
+      paint: { 'fill-color': fillColorExpression(), 'fill-opacity': HOVER_OPACITY },
     },
     ANCHOR_LAYER_ID,
   );

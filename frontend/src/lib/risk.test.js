@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
+  NO_DATA_COLOR,
   RISK_BANDS,
   RISK_RAMP,
+  fillColorExpression,
   formatCellName,
   formatMonth,
   riskBand,
@@ -54,11 +56,28 @@ describe('riskRampGradient', () => {
     const gradient = riskRampGradient();
     expect(gradient).toMatch(/^linear-gradient\(to right, /);
     expect(gradient).toContain(`${RISK_BANDS[0].color} 0%`);
-    expect(gradient).toContain('#6A0000 100%');
+    expect(gradient).toContain(`${RISK_RAMP.at(-1).color} 100%`);
   });
 
   test('honours a custom direction', () => {
     expect(riskRampGradient('to top')).toMatch(/^linear-gradient\(to top, /);
+  });
+});
+
+describe('fillColorExpression', () => {
+  test('branches null risk to the no-data colour before interpolating', () => {
+    const expr = fillColorExpression();
+    expect(expr[0]).toBe('case');
+    expect(expr[2]).toBe(NO_DATA_COLOR);
+    expect(expr[3][0]).toBe('interpolate');
+  });
+
+  test('interpolates over the absolute 0–100 ramp stops (no rescaling)', () => {
+    const interpolate = fillColorExpression()[3];
+    const inputs = interpolate.slice(3).filter((_, i) => i % 2 === 0);
+    expect(inputs).toEqual(RISK_RAMP.map((s) => s.stop));
+    expect(inputs[0]).toBe(0);
+    expect(inputs[inputs.length - 1]).toBe(100);
   });
 });
 

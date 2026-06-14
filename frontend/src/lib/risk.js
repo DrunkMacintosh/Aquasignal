@@ -24,27 +24,54 @@ export function riskBand(score) {
 }
 
 // Continuous colour ramp for the map choropleth. A `step` fill paints every
-// district in a band the same flat colour, so neighbouring provinces look
-// identical; this ramp interpolates between stops so each score reads as its
-// own shade. The boundary stops (0/25/50/75) are pinned to RISK_BANDS so the
-// legend swatches and band chips stay truthful — only the in-between stops are
-// new, and they exist purely to add within-band contrast.
+// district in a band the same flat colour; this ramp interpolates between stops
+// so each score reads as its own shade. The boundary stops (0/25/50/75) are
+// pinned to RISK_BANDS so the legend swatches and band chips stay truthful.
+//
+// The top half is deliberately dense: in Vietnam almost every district sits in
+// the 60-100 range, so a plain orange->dark-red ramp leaves them near-identical
+// (our eyes barely separate dark reds). Above 75 the ramp shifts HUE through
+// crimson -> magenta -> violet -> near-black, which gives high-but-different
+// scores obvious contrast and follows the "beyond maximum" convention (AQI
+// hazardous, extreme-heat scales). Colour stays absolute — a shade always means
+// the same score, no data-dependent rescaling.
 export const RISK_RAMP = [
   { stop: 0, color: RISK_BANDS[0].color }, // low
   { stop: 12.5, color: '#9CCC3C' },
   { stop: 25, color: RISK_BANDS[1].color }, // medium
   { stop: 37.5, color: '#FF9800' },
-  { stop: 50, color: RISK_BANDS[2].color }, // high
-  { stop: 62.5, color: '#E53935' },
-  { stop: 75, color: RISK_BANDS[3].color }, // critical
-  { stop: 87.5, color: '#8E0E15' },
-  { stop: 100, color: '#6A0000' },
+  { stop: 50, color: RISK_BANDS[2].color }, // high — vivid orange
+  { stop: 56, color: '#F73E1B' },
+  { stop: 62, color: '#E5231D' },
+  { stop: 68, color: '#D11423' },
+  { stop: 75, color: RISK_BANDS[3].color }, // critical — deep red
+  { stop: 81, color: '#9B0E4E' }, // wine, shifting toward magenta
+  { stop: 86, color: '#7B1FA2' }, // violet
+  { stop: 91, color: '#5E16A0' }, // deep violet
+  { stop: 96, color: '#3B0D6E' }, // indigo
+  { stop: 100, color: '#1A0533' }, // near-black violet — most extreme
 ];
 
 /** CSS `linear-gradient(...)` mirroring RISK_RAMP, for the legend ramp bar. */
 export function riskRampGradient(direction = 'to right') {
   const stops = RISK_RAMP.map(({ stop, color }) => `${color} ${stop}%`).join(', ');
   return `linear-gradient(${direction}, ${stops})`;
+}
+
+/**
+ * MapLibre `fill-color` expression: RISK_RAMP across the absolute 0-100 score
+ * domain. Colour is absolute — a shade always means the same score, with no
+ * data-dependent rescaling. Districts with no score (current_risk null) branch
+ * to the "no data" grey before the interpolation.
+ */
+export function fillColorExpression() {
+  const stops = RISK_RAMP.flatMap(({ stop, color }) => [stop, color]);
+  return [
+    'case',
+    ['==', ['coalesce', ['get', 'current_risk'], -1], -1],
+    NO_DATA_COLOR,
+    ['interpolate', ['linear'], ['get', 'current_risk'], ...stops],
+  ];
 }
 
 export const TRENDS = {
