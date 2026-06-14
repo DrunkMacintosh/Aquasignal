@@ -89,8 +89,9 @@ export default function MapPage() {
       </div>
 
       <div className="pointer-events-none absolute left-3 top-[4.75rem] z-10 flex flex-col gap-2 md:left-4 md:top-20 [&>*]:pointer-events-auto">
-        {/* The risk key only applies to the choropleth views, not the plain street map. */}
-        {view !== 'roads' && <MapLegend />}
+        {/* Every view now shows a risk choropleth (roads = districts over the
+            street basemap), so the key is always relevant. */}
+        <MapLegend />
       </div>
 
       {/* View switcher floats centred at the bottom, dynamic-island style,

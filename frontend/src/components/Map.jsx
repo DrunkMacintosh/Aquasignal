@@ -1,8 +1,8 @@
 // MapLibre GL choropleth with two layer sets sharing one map instance:
 //   districts — real province boundaries, area-weighted risk (default view)
 //   grid      — the model's native 0.25° cells (detail view)
-//   roads     — no choropleth; swaps the satellite basemap for an Esri street
-//               basemap so every road and highway reads clearly
+//   roads     — the same district/province/city choropleth as the districts
+//               view, but over an Esri street basemap instead of satellite
 // on a keyless satellite basemap (Esri World Imagery + Esri reference labels;
 // attribution is a usage requirement and surfaces via the control).
 //
@@ -285,7 +285,10 @@ function applyViewVisibility(map, view) {
   SATELLITE_BASEMAP_LAYERS.forEach((id) => setVisibility(id, !isRoads));
   setVisibility(STREET_BASEMAP_LAYER, isRoads);
   Object.values(GRID.layers).forEach((id) => setVisibility(id, view === 'grid'));
-  Object.values(DISTRICTS.layers).forEach((id) => setVisibility(id, view === 'districts'));
+  // The district choropleth backs both its own view and the roads view — in
+  // roads it simply sits over the street basemap instead of the satellite one.
+  const showDistricts = view === 'districts' || isRoads;
+  Object.values(DISTRICTS.layers).forEach((id) => setVisibility(id, showDistricts));
 }
 
 function RiskTooltip({ tooltip, month }) {
