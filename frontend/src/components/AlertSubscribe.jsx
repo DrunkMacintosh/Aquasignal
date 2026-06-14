@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { subscribeAlert, unsubscribeDistrict } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { riskBand } from '../lib/risk.js';
+import { adminUnitNoun } from '../lib/adminUnits.js';
 import { removeSubscription, setSubscription, useSubscriptions } from '../lib/subscriptions.js';
 
 const DEFAULT_THRESHOLD = 75;
@@ -45,7 +46,7 @@ export default function AlertSubscribe({ district }) {
       <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">
         <p className="text-sm font-semibold">Get alerts for {district}</p>
         <p className="mt-1 text-xs text-ink-soft">
-          Sign in to be notified when this district's risk crosses a threshold you choose.
+          Sign in to be notified when this {adminUnitNoun(district)}'s risk crosses a threshold you choose.
         </p>
         <button
           type="button"

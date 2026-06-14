@@ -28,7 +28,7 @@ export function MapSkeleton() {
 
 export function PanelSkeleton() {
   return (
-    <div className="space-y-4 p-5" role="status" aria-label="Loading district details">
+    <div className="space-y-4 p-5" role="status" aria-label="Loading details">
       <div className="skeleton h-7 w-2/3" />
       <div className="skeleton h-24 w-full" />
       <div className="skeleton h-5 w-1/3" />

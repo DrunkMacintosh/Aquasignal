@@ -38,7 +38,7 @@ function SignInForm({ onSwitch }) {
   return (
     <AuthCard
       title="Sign in"
-      subtitle="Sign in to set up and manage district alerts."
+      subtitle="Sign in to set up and manage province and city alerts."
       switchPrompt="New here?"
       switchLabel="Create an account"
       onSwitch={onSwitch}

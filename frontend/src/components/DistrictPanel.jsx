@@ -4,6 +4,7 @@
 //   { type: 'district', name }  — opened from the critical-alert banner
 import { useEffect } from 'react';
 import { formatCellName } from '../lib/risk.js';
+import { adminUnitType } from '../lib/adminUnits.js';
 import CellDetails from './panel/CellDetails.jsx';
 import DistrictDetails from './panel/DistrictDetails.jsx';
 
@@ -21,7 +22,9 @@ export default function DistrictPanel({ selection, month, onClose }) {
 
   const isCell = selection.type === 'cell';
   const title = isCell ? formatCellName(selection.cell.cell_id) : selection.name;
-  const subtitle = isCell ? `Grid cell ${selection.cell.cell_id}` : 'District overview';
+  const subtitle = isCell
+    ? `Grid cell ${selection.cell.cell_id}`
+    : `${adminUnitType(selection.name)} overview`;
 
   return (
     <aside

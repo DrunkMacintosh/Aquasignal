@@ -7,6 +7,7 @@ import {
   useDistrictSatellite,
 } from '../../api/hooks.js';
 import { trendFromHistory } from '../../lib/risk.js';
+import { adminUnitNoun } from '../../lib/adminUnits.js';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
@@ -20,12 +21,13 @@ export default function DistrictDetails({ name }) {
   const history = useDistrictHistory(name);
   const forecast = useDistrictForecast(name);
   const satellite = useDistrictSatellite(name);
+  const unitNoun = adminUnitNoun(name);
 
   if (history.isPending) return <PanelSkeleton />;
   if (history.isError) {
     return (
       <p className="p-5 text-sm text-ink-soft">
-        Could not load data for {name}. Check the district name and try again.
+        Could not load data for {name}. Check the {unitNoun} name and try again.
       </p>
     );
   }
@@ -43,13 +45,13 @@ export default function DistrictDetails({ name }) {
         />
       ) : (
         <p className="text-sm text-ink-soft">
-          No risk scores for this district yet — its grid cells fall outside the satellite
+          No risk scores for this {unitNoun} yet — its grid cells fall outside the satellite
           coverage (open water or sensor gaps). Raw observations may still appear below.
         </p>
       )}
 
       <section aria-label="6-month forecast">
-        <SectionTitle>6-month outlook (district average)</SectionTitle>
+        <SectionTitle>6-month outlook ({unitNoun} average)</SectionTitle>
         {forecast.isError ? (
           <p className="text-sm text-ink-soft">Forecast could not be loaded.</p>
         ) : (

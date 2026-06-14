@@ -19,6 +19,7 @@ import {
   riskBand,
   trendInfo,
 } from '../lib/risk.js';
+import { adminUnitType } from '../lib/adminUnits.js';
 import { MapSkeleton } from './Skeletons.jsx';
 
 const ESRI_TILE = (service) =>
@@ -319,7 +320,8 @@ function RiskTooltip({ tooltip, month }) {
           </p>
         )}
         <p className="microlabel mt-2">
-          {kind === 'district' ? 'District average · ' : ''}Updated {formatMonth(month)}
+          {kind === 'district' ? `${adminUnitType(props.district_name)} average · ` : ''}Updated{' '}
+          {formatMonth(month)}
         </p>
       </div>
     </div>

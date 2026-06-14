@@ -7,7 +7,7 @@ import { ChartSkeleton } from './Skeletons.jsx';
 export default function Sparkline({ points, isLoading }) {
   if (isLoading) return <ChartSkeleton height={72} />;
   if (!points?.length) {
-    return <p className="text-sm text-ink-soft">No historical scores for this district yet.</p>;
+    return <p className="text-sm text-ink-soft">No historical scores yet.</p>;
   }
 
   const latest = points[points.length - 1];

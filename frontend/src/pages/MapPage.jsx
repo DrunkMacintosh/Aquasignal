@@ -12,6 +12,7 @@ import RiskMap from '../components/Map.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
 import StaleDataBanner from '../components/StaleDataBanner.jsx';
 import { formatMonth } from '../lib/risk.js';
+import { ADMIN_UNIT_LABEL } from '../lib/adminUnits.js';
 
 // The detail panel pulls in Recharts (~150 kB gzipped); loading it on first
 // open keeps the chart library out of the map's critical path.
@@ -20,7 +21,7 @@ const DistrictPanel = lazy(() => import('../components/DistrictPanel.jsx'));
 const VIEW_STORAGE_KEY = 'aquasignal.map-view';
 
 const VIEW_OPTIONS = [
-  { value: 'districts', label: 'Districts' },
+  { value: 'districts', label: ADMIN_UNIT_LABEL },
   { value: 'grid', label: 'Grid detail' },
   { value: 'roads', label: 'Roads' },
 ];

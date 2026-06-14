@@ -36,6 +36,7 @@ from reportlab.platypus import (  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
+from core.admin_units import admin_unit_noun  # noqa: E402
 from core.database import get_db  # noqa: E402
 from core.queries import (  # noqa: E402
     _DISTRICT_WEIGHTS_SQL,
@@ -186,14 +187,17 @@ def _build_pdf(
     if avg_risk is not None:
         story.append(
             Paragraph(
-                f"Current district risk (area-weighted): <b>{avg_risk:.1f}/100</b> "
-                f"({risk_level(avg_risk)})",
+                f"Current {admin_unit_noun(district_name)} risk (area-weighted): "
+                f"<b>{avg_risk:.1f}/100</b> ({risk_level(avg_risk)})",
                 styles["Heading2"],
             )
         )
     else:
         story.append(
-            Paragraph("No current risk scores for this district.", styles["Heading2"])
+            Paragraph(
+                f"No current risk scores for this {admin_unit_noun(district_name)}.",
+                styles["Heading2"],
+            )
         )
     story.append(Spacer(1, 0.4 * cm))
 
@@ -231,7 +235,12 @@ def _build_pdf(
         )
         story.append(table)
     else:
-        story.append(Paragraph("No scored cells in this district.", styles["Normal"]))
+        story.append(
+            Paragraph(
+                f"No scored cells in this {admin_unit_noun(district_name)}.",
+                styles["Normal"],
+            )
+        )
 
     doc.build(story)
     return output.getvalue()

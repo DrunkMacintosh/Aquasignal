@@ -26,15 +26,15 @@ export default function DistrictServices() {
 
   return (
     <div className="space-y-6 border-t border-ink/10 pt-5">
-      <section aria-label="District selection">
-        <SectionTitle>District · reports &amp; alerts</SectionTitle>
+      <section aria-label="Province or city selection">
+        <SectionTitle>Province or city · reports &amp; alerts</SectionTitle>
         <select
           value={district}
           onChange={handleChange}
-          aria-label="Select the district this cell belongs to"
+          aria-label="Select the province or city this cell belongs to"
           className="w-full rounded-lg border border-ink/15 bg-surface px-3 py-2.5 text-sm font-medium focus-visible:outline-water"
         >
-          <option value="">Select a district…</option>
+          <option value="">Select a province or city…</option>
           {districtNames.map((name) => (
             <option key={name} value={name}>
               {name}

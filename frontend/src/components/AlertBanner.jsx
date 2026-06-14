@@ -20,7 +20,9 @@ export default function AlertBanner({ onOpenDistrict }) {
         ⚠ Critical risk
       </span>
       <span className="text-sm">
-        {critical.length === 1 ? 'This district needs attention:' : 'These districts need attention:'}
+        {critical.length === 1
+          ? 'This province or city needs attention:'
+          : 'These provinces and cities need attention:'}
       </span>
       <span className="flex flex-wrap gap-1.5">
         {critical.map((district) => (
