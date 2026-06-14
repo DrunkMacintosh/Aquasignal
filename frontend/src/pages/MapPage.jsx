@@ -88,9 +88,14 @@ export default function MapPage() {
       </div>
 
       <div className="pointer-events-none absolute left-3 top-[4.75rem] z-10 flex flex-col gap-2 md:left-4 md:top-20 [&>*]:pointer-events-auto">
-        <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={changeView} label="Map view" />
         {/* The risk key only applies to the choropleth views, not the plain street map. */}
         {view !== 'roads' && <MapLegend />}
+      </div>
+
+      {/* View switcher floats centred at the bottom, dynamic-island style,
+          clear of the bottom-right zoom and attribution controls. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center md:bottom-6 [&>*]:pointer-events-auto">
+        <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={changeView} label="Map view" />
       </div>
 
       {showHardError && <HardError error={active.error} onRetry={refresh} />}
