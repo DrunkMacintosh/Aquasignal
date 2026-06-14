@@ -98,6 +98,13 @@ const HOVER_OPACITY = [
   ['boolean', ['feature-state', 'hover'], false], 0.92,
   0.62,
 ];
+// Roads view lays the choropleth over the street basemap; a lower fill opacity
+// keeps the road network legible beneath the risk colours.
+const ROADS_FILL_OPACITY = [
+  'case',
+  ['boolean', ['feature-state', 'hover'], false], 0.75,
+  0.42,
+];
 
 export default function RiskMap({
   gridData,
@@ -289,6 +296,14 @@ function applyViewVisibility(map, view) {
   // roads it simply sits over the street basemap instead of the satellite one.
   const showDistricts = view === 'districts' || isRoads;
   Object.values(DISTRICTS.layers).forEach((id) => setVisibility(id, showDistricts));
+  // Thin the district fill in roads view so the streets read through.
+  if (map.getLayer(DISTRICTS.layers.fill)) {
+    map.setPaintProperty(
+      DISTRICTS.layers.fill,
+      'fill-opacity',
+      isRoads ? ROADS_FILL_OPACITY : HOVER_OPACITY,
+    );
+  }
 }
 
 function RiskTooltip({ tooltip, month }) {

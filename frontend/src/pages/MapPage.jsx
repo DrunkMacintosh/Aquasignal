@@ -22,8 +22,8 @@ const VIEW_STORAGE_KEY = 'aquasignal.map-view';
 
 const VIEW_OPTIONS = [
   { value: 'districts', label: `${ADMIN_UNIT_LABEL} view` },
-  { value: 'grid', label: 'Grid view' },
   { value: 'roads', label: 'Road view' },
+  { value: 'grid', label: 'Grid view' },
 ];
 
 export default function MapPage() {
