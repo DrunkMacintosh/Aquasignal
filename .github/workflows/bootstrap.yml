@@ -11,6 +11,8 @@ name: Bootstrap database (run once)
 #   3. seed_districts.py --all   -> province boundaries
 #   4. clip_cells_to_land.py     -> grid cells clipped to coast/border
 #                                   (needs grid cells AND districts, hence last)
+#   5. load_permeability.py      -> static soil permeability onto grid cells
+#                                   (needs grid cells, from step 2)
 
 on:
   workflow_dispatch: {}
@@ -44,7 +46,7 @@ jobs:
           GEE_PRIVATE_KEY_JSON: ${{ secrets.GEE_PRIVATE_KEY_JSON }}
         run: printf '%s' "$GEE_PRIVATE_KEY_JSON" > /tmp/gee-key.json
 
-      - name: 1/4 Apply database schema
+      - name: 1/5 Apply database schema
         working-directory: backend
         env:
           AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -52,7 +54,7 @@ jobs:
           AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
         run: alembic upgrade head
 
-      - name: 2/4 Run the full pipeline (fetch, score, store)
+      - name: 2/5 Run the full pipeline (fetch, score, store)
         env:
           AQUASIGNAL_DSN: ${{ secrets.DATABASE_URL }}
           EARTHDATA_USER: ${{ secrets.EARTHDATA_USER }}
@@ -62,7 +64,7 @@ jobs:
           GEE_PROJECT: ${{ secrets.GEE_PROJECT }}
         run: python monthly_cron.py --skip-trigger
 
-      - name: 3/4 Seed province boundaries
+      - name: 3/5 Seed province boundaries
         working-directory: backend
         env:
           AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -70,13 +72,21 @@ jobs:
           AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
         run: python scripts/seed_districts.py ../data/boundaries/geoBoundaries-VNM-ADM1_simplified.geojson --all
 
-      - name: 4/4 Clip grid cells to land
+      - name: 4/5 Clip grid cells to land
         working-directory: backend
         env:
           AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AQUASIGNAL_JWT_SECRET_KEY: bootstrap-only-not-used
           AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
         run: python scripts/clip_cells_to_land.py
+
+      - name: 5/5 Load soil permeability onto grid cells
+        working-directory: backend
+        env:
+          AQUASIGNAL_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AQUASIGNAL_JWT_SECRET_KEY: bootstrap-only-not-used
+          AQUASIGNAL_INTERNAL_API_TOKEN: bootstrap-only-not-used
+        run: python scripts/load_permeability.py
 
       - name: Commit pipeline output
         run: |
