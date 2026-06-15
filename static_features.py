@@ -38,23 +38,30 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 OUTPUT_PATH = PROCESSED_DIR / "static_features.parquet"
 EARTH_RADIUS_KM = 6371.0
 
-# Soil permeability. Sand fraction comes from OpenLandMap (official GEE catalog,
-# always accessible); saturated hydraulic conductivity is estimated with the
-# Cosby et al. (1984) univariate sand pedotransfer used in Noah/CLM land models:
-#     Ksat[mm/s] = 0.0070556 * 10^(-0.884 + 0.0153 * sand%)
-# then converted to mm/hour. permeability_index is that Ksat log-normalised to
-# [0, 1] against physically plausible bounds, so it is a transferable covariate
-# regardless of absolute calibration. (If a direct Ksat layer such as
-# HiHydroSoil is confirmed accessible, swap SAND_ASSET sampling for it -- the
-# normalisation below still applies.)
+# Soil permeability. Surface sand and clay fractions come from OpenLandMap
+# (official GEE catalog, always accessible). Saturated hydraulic conductivity
+# is estimated with a Cosby et al. (1984) style pedotransfer: the Noah/CLM sand
+# term (scale 0.0070556 mm/s, coef 0.0153) plus the Cosby multivariate clay
+# correction (coef -0.0064), so more sand raises Ksat and more clay lowers it:
+#     Ksat[mm/s] = 0.0070556 * 10^(-0.884 + 0.0153*sand% - 0.0064*clay%)
+# then converted to mm/hour. Sand alone barely varies across Vietnam's deltaic
+# soils (index std ~0.02, all "moderate"); adding clay doubles the spread and
+# correctly separates the clay-rich, low-permeability deltas from loamier
+# uplands. permeability_index is Ksat log-normalised to [0, 1] over a
+# soil-relevant window, so it stays a transferable covariate regardless of
+# absolute calibration. (If a direct Ksat layer such as HiHydroSoil is later
+# confirmed accessible, swap the sampling for it -- the normalisation still
+# applies.)
 OPENLANDMAP_SAND_ASSET = "OpenLandMap/SOL/SOL_SAND-WFRACTION_USDA-3A1A1A_M/v02"
-OPENLANDMAP_SAND_BAND = "b0"  # surface (0 cm), percent sand by weight
+OPENLANDMAP_CLAY_ASSET = "OpenLandMap/SOL/SOL_CLAY-WFRACTION_USDA-3A1A1A_M/v02"
+OPENLANDMAP_SOIL_BAND = "b0"  # surface (0 cm), percent by weight
 COSBY_KSAT_INTERCEPT = -0.884
 COSBY_KSAT_SAND_COEF = 0.0153
+COSBY_KSAT_CLAY_COEF = 0.0064  # subtracted: clay impedes drainage
 COSBY_KSAT_SCALE_MM_S = 0.0070556
 SECONDS_PER_HOUR = 3600.0
-PERMEABILITY_KSAT_MIN_MM_HR = 0.1     # ~heavy clay floor
-PERMEABILITY_KSAT_MAX_MM_HR = 1000.0  # ~gravel/sand ceiling
+PERMEABILITY_KSAT_MIN_MM_HR = 1.0    # ~clay-loam floor (soil-relevant window)
+PERMEABILITY_KSAT_MAX_MM_HR = 250.0  # ~coarse sand ceiling
 
 logging.basicConfig(
     level=logging.INFO,
@@ -87,13 +94,15 @@ def fetch_terrain(grid) -> pd.DataFrame:
     )
 
 
-def cosby_ksat_mm_hr(sand_pct: np.ndarray) -> np.ndarray:
-    """Cosby (1984) univariate sand -> saturated hydraulic conductivity (mm/hr).
+def cosby_ksat_mm_hr(sand_pct: np.ndarray, clay_pct: np.ndarray) -> np.ndarray:
+    """Cosby-style sand/clay -> saturated hydraulic conductivity (mm/hr).
 
-    NaN sand (masked / ocean cells) propagates to NaN Ksat.
+    NaN sand or clay (masked / ocean cells) propagates to NaN Ksat.
     """
     ksat_mm_s = COSBY_KSAT_SCALE_MM_S * 10.0 ** (
-        COSBY_KSAT_INTERCEPT + COSBY_KSAT_SAND_COEF * sand_pct
+        COSBY_KSAT_INTERCEPT
+        + COSBY_KSAT_SAND_COEF * sand_pct
+        - COSBY_KSAT_CLAY_COEF * clay_pct
     )
     return ksat_mm_s * SECONDS_PER_HOUR
 
@@ -111,14 +120,15 @@ def permeability_index_from_ksat(ksat_mm_hr: np.ndarray) -> np.ndarray:
 
 
 def fetch_soil(grid) -> pd.DataFrame:
-    """Sample OpenLandMap sand at every grid centroid and derive permeability."""
+    """Sample OpenLandMap sand+clay at every grid centroid and derive permeability."""
     init_earth_engine()
-    sand = ee.Image(OPENLANDMAP_SAND_ASSET).select(OPENLANDMAP_SAND_BAND).rename("sand")
+    sand = ee.Image(OPENLANDMAP_SAND_ASSET).select(OPENLANDMAP_SOIL_BAND).rename("sand")
+    clay = ee.Image(OPENLANDMAP_CLAY_ASSET).select(OPENLANDMAP_SOIL_BAND).rename("clay")
     points = build_grid_points(grid)
-    features = sample_image_at_grid(sand, points, ["sand"])
-    sand_pct = features_to_grid_arrays(features, ["sand"], grid)["sand"].ravel()
+    features = sample_image_at_grid(sand.addBands(clay), points, ["sand", "clay"])
+    arrays = features_to_grid_arrays(features, ["sand", "clay"], grid)
 
-    ksat = cosby_ksat_mm_hr(sand_pct)
+    ksat = cosby_ksat_mm_hr(arrays["sand"].ravel(), arrays["clay"].ravel())
     lats = np.repeat(grid.lats, len(grid.lons))
     lons = np.tile(grid.lons, len(grid.lats))
     return pd.DataFrame(

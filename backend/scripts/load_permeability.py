@@ -74,13 +74,15 @@ async def main() -> None:
     records = _load_records()
     async with SessionFactory() as session:
         await session.execute(_RESET_SQL)
-        result = await session.execute(_UPDATE_SQL, records)
+        # asyncpg executemany returns rowcount -1, so the stats query below is
+        # the source of truth for how many cells actually took a value.
+        await session.execute(_UPDATE_SQL, records)
         await session.commit()
         stats = (await session.execute(_STATS_SQL)).one()
     await engine.dispose()
     print(
-        f"Loaded soil data for {result.rowcount} matched cell(s); "
-        f"{stats.with_soil}/{stats.total} now carry a permeability value "
+        f"Loaded soil data from {len(records)} parquet row(s); "
+        f"{stats.with_soil}/{stats.total} cells now carry a permeability value "
         f"({stats.total - stats.with_soil} without soil data)."
     )
 
