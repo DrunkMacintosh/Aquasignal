@@ -1,30 +1,72 @@
-"""AI water-planning advisor endpoints.
+"""AI water-planning advisor endpoints (two-step report flow).
 
-`GET /advisor/config` lets the frontend discover whether the advisor is enabled
-(an OpenRouter key is configured) so it can hide the section otherwise.
+* `GET  /advisor/config`    -- is the advisor enabled, and which model.
+* `POST /advisor/questions` -- a few short, tailored intake questions.
+* `POST /advisor/report`    -- a deep, structured report from the answers.
 
-`POST /advisor/chat` is a thin proxy: it builds a system prompt from the
-client-supplied district snapshot, prepends it to the conversation, relays to
-OpenRouter, and returns the reply. The API key stays server-side; the data in
-the snapshot is the same public read-only data the panel already shows.
+Both POSTs are thin proxies: they build prompts from the client-supplied
+district snapshot, relay to OpenRouter, and return structured JSON. The API key
+stays server-side; the snapshot is the same public read-only data the panel
+already shows.
 """
 
 import logging
+from typing import Awaitable, TypeVar
 
 from fastapi import APIRouter, HTTPException, Request, status
 
-from core.advisor import AdvisorError, AdvisorRateLimited, build_system_prompt, chat
-from core.config import get_settings
+from core.advisor import (
+    AdvisorError,
+    AdvisorRateLimited,
+    generate_questions,
+    generate_report,
+)
+from core.config import Settings, get_settings
 from core.ratelimit import ADVISOR_RATE_LIMIT, limiter
 from models.schemas import (
-    AdvisorChatRequest,
-    AdvisorChatResponse,
     AdvisorConfigResponse,
+    AdvisorQuestion,
+    AdvisorQuestionsRequest,
+    AdvisorQuestionsResponse,
+    AdvisorReport,
+    AdvisorReportRequest,
+    AdvisorReportResponse,
 )
 
 LOG = logging.getLogger("aquasignal.advisor")
 
 router = APIRouter(prefix="/advisor", tags=["advisor"])
+
+T = TypeVar("T")
+
+
+def _require_enabled() -> Settings:
+    settings = get_settings()
+    if not settings.openrouter_api_key:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI advisor is not configured on this server.",
+        )
+    return settings
+
+
+async def _run(coro: Awaitable[T], *, district: str) -> T:
+    """Await an advisor call, mapping upstream failures to HTTP errors: a
+    transient 429 -> 429 ("busy, retry"), anything else -> 502."""
+    try:
+        return await coro
+    except AdvisorRateLimited as exc:
+        LOG.warning("Advisor rate-limited for %s: %s", district, exc)
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="The AI advisor is busy right now. Please try again in a moment.",
+        ) from exc
+    except AdvisorError as exc:
+        LOG.warning("Advisor failed for %s: %s", district, exc)
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            detail="The AI advisor is temporarily unavailable. Please try again.",
+        ) from exc
 
 
 @router.get(
@@ -47,48 +89,53 @@ async def get_advisor_config() -> AdvisorConfigResponse:
 
 
 @router.post(
-    "/chat",
-    response_model=AdvisorChatResponse,
-    summary="Chat with the water-planning advisor",
+    "/questions",
+    response_model=AdvisorQuestionsResponse,
+    summary="Intake questions for a water plan",
     description=(
-        "Sends the conversation plus a compact district-data snapshot to the "
-        "configured OpenRouter model. The model interprets the location's "
-        "prediction data, asks about the user's current position, and works "
-        "toward a sustainable water-usage plan for the chosen need. Returns "
-        "503 when no model is configured."
+        "Returns 3-5 short, tailored questions the advisor needs before writing "
+        "a plan for the chosen need at this location. Returns 503 when no model "
+        "is configured."
     ),
 )
 @limiter.limit(ADVISOR_RATE_LIMIT)
-async def post_advisor_chat(
+async def post_advisor_questions(
     request: Request,  # required by slowapi to key the client IP
-    body: AdvisorChatRequest,
-) -> AdvisorChatResponse:
-    settings = get_settings()
-    if not settings.openrouter_api_key:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="The AI advisor is not configured on this server.",
-        )
+    body: AdvisorQuestionsRequest,
+) -> AdvisorQuestionsResponse:
+    settings = _require_enabled()
+    questions = await _run(
+        generate_questions(
+            body.district_name, body.need, body.snapshot, settings=settings
+        ),
+        district=body.district_name,
+    )
+    return AdvisorQuestionsResponse(
+        questions=[AdvisorQuestion(**q) for q in questions],
+        model=settings.openrouter_model,
+    )
 
-    system_prompt = build_system_prompt(body.district_name, body.need, body.snapshot)
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend({"role": m.role, "content": m.content} for m in body.messages)
 
-    try:
-        reply = await chat(messages, settings=settings)
-    except AdvisorRateLimited as exc:
-        # Transient: the (free) model's upstream pool is busy. Tell the client
-        # to retry rather than implying the feature is broken.
-        LOG.warning("Advisor rate-limited for %s: %s", body.district_name, exc)
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="The AI advisor is busy right now. Please try again in a moment.",
-        ) from exc
-    except AdvisorError as exc:
-        LOG.warning("Advisor chat failed for %s: %s", body.district_name, exc)
-        raise HTTPException(
-            status.HTTP_502_BAD_GATEWAY,
-            detail="The AI advisor is temporarily unavailable. Please try again.",
-        ) from exc
-
-    return AdvisorChatResponse(reply=reply, model=settings.openrouter_model)
+@router.post(
+    "/report",
+    response_model=AdvisorReportResponse,
+    summary="Deep-analysis water plan report",
+    description=(
+        "Generates a structured water-use report for the chosen need at this "
+        "location, grounded in the prediction-data snapshot and the user's "
+        "answers. Returns 503 when no model is configured."
+    ),
+)
+@limiter.limit(ADVISOR_RATE_LIMIT)
+async def post_advisor_report(
+    request: Request,  # required by slowapi to key the client IP
+    body: AdvisorReportRequest,
+) -> AdvisorReportResponse:
+    settings = _require_enabled()
+    report = await _run(
+        generate_report(
+            body.district_name, body.need, body.snapshot, body.answers, settings=settings
+        ),
+        district=body.district_name,
+    )
+    return AdvisorReportResponse(report=AdvisorReport(**report), model=settings.openrouter_model)
