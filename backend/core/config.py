@@ -16,6 +16,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _BACKEND_DIR = Path(__file__).resolve().parents[1]
 _REPO_ROOT = _BACKEND_DIR.parent
 
+# The advisor's outbound request carries the API key in an Authorization header,
+# so the destination host is allowlisted (defense-in-depth) -- it can only be one
+# of these vetted OpenAI-compatible LLM providers, never an arbitrary host. All
+# three offer a genuinely free tier:
+#   * openrouter.ai                      -- shared free pool (rate-limited)
+#   * generativelanguage.googleapis.com  -- Google AI Studio / Gemini free tier
+#   * api.groq.com                       -- Groq free tier
+_ALLOWED_LLM_HOSTS = frozenset(
+    {"openrouter.ai", "generativelanguage.googleapis.com", "api.groq.com"}
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -65,17 +76,17 @@ class Settings(BaseSettings):
 
     @field_validator("openrouter_base_url")
     @classmethod
-    def _pin_openrouter_host(cls, value: str) -> str:
-        # Defense-in-depth: the outbound request carries the API key in an
-        # Authorization header. This is a server-side setting (not user input),
-        # but pinning the destination to OpenRouter means a future misconfig --
-        # or a "bring your own provider" feature -- cannot silently ship the key
-        # to an arbitrary host.
+    def _allow_known_llm_host(cls, value: str) -> str:
+        # Restrict the key's destination to a vetted allowlist (see
+        # _ALLOWED_LLM_HOSTS): https only, and a known LLM provider host.
         from urllib.parse import urlparse
 
         parsed = urlparse(value)
-        if parsed.scheme != "https" or parsed.hostname != "openrouter.ai":
-            raise ValueError("openrouter_base_url must be an https URL on openrouter.ai")
+        if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_LLM_HOSTS:
+            raise ValueError(
+                "openrouter_base_url must be an https URL on one of: "
+                + ", ".join(sorted(_ALLOWED_LLM_HOSTS))
+            )
         return value
     # OpenRouter attributes traffic via these headers (shown on their dashboard
     # and used for free-tier ranking); harmless if the values are placeholders.
