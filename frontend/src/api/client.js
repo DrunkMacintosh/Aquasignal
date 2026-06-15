@@ -157,21 +157,29 @@ export async function fetchAdvisorConfig() {
  * prompt is built server-side from `snapshot`); the last message must be the
  * new user turn.
  */
-export async function sendAdvisorChat({ districtName, need, snapshot, messages }) {
+// LLM generation (plus a couple of 429 retries server-side) routinely exceeds
+// the default 30s; allow more than the backend's 60s upstream timeout so a
+// slow-but-successful reply isn't cut off client-side.
+const ADVISOR_TIMEOUT_MS = 90_000;
+
+/** Step 1: a few short, tailored intake questions for the chosen need. */
+export async function fetchAdvisorQuestions({ districtName, need, snapshot }) {
   const { data } = await api.post(
-    '/advisor/chat',
-    {
-      district_name: districtName,
-      need,
-      snapshot,
-      messages,
-    },
-    // LLM generation (plus a couple of 429 retries server-side) routinely
-    // exceeds the default 30s; allow more than the backend's 60s upstream
-    // timeout so a slow-but-successful reply isn't cut off client-side.
-    { timeout: 90_000 },
+    '/advisor/questions',
+    { district_name: districtName, need, snapshot },
+    { timeout: ADVISOR_TIMEOUT_MS },
   );
-  return data; // { reply, model }
+  return data; // { questions: [{id, question, hint}], model }
+}
+
+/** Step 2: the deep-analysis structured report from the user's answers. */
+export async function fetchAdvisorReport({ districtName, need, snapshot, answers }) {
+  const { data } = await api.post(
+    '/advisor/report',
+    { district_name: districtName, need, snapshot, answers },
+    { timeout: ADVISOR_TIMEOUT_MS },
+  );
+  return data; // { report: {...}, model }
 }
 
 // ---------------------------------------------------------------------------

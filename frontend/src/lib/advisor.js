@@ -38,12 +38,6 @@ export function needLabel(needId) {
   return ADVISOR_NEEDS.find((need) => need.id === needId)?.label ?? needId;
 }
 
-/** Opening user turn that states the goal; the system prompt drives the
- *  analyze -> ask -> plan flow from there. */
-export function kickoffMessage(needId, districtName) {
-  return `I'd like help planning ${needLabel(needId)} for ${districtName}.`;
-}
-
 /**
  * Reduce the district's cached datasets to the backend AdvisorSnapshot shape.
  * Every field is null/empty-safe so a partially loaded panel still produces a

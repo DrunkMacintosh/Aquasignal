@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  ADVISOR_NEEDS,
-  buildSnapshot,
-  kickoffMessage,
-  needLabel,
-} from './advisor.js';
+import { ADVISOR_NEEDS, buildSnapshot, needLabel } from './advisor.js';
 
 describe('ADVISOR_NEEDS', () => {
   test('ids match the backend AdvisorNeed contract exactly', () => {
@@ -103,11 +98,5 @@ describe('text helpers', () => {
   test('needLabel resolves ids and falls back to the id', () => {
     expect(needLabel('agriculture')).toBe('Agriculture & irrigation');
     expect(needLabel('unknown')).toBe('unknown');
-  });
-
-  test('kickoffMessage names the goal and district', () => {
-    const message = kickoffMessage('agriculture', 'Long An');
-    expect(message).toContain('Agriculture & irrigation');
-    expect(message).toContain('Long An');
   });
 });

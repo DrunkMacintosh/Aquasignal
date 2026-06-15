@@ -372,7 +372,7 @@ class TriggerSummary(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# AI advisor (OpenRouter-backed water-planning chat)
+# AI advisor (OpenRouter-backed water-planning report)
 # --------------------------------------------------------------------------- #
 
 # The planning goals a user can choose. Kept in sync with ADVISOR_NEEDS on the
@@ -380,22 +380,24 @@ class TriggerSummary(BaseModel):
 AdvisorNeed = Literal[
     "water_sustainability", "agriculture", "urban_supply", "industrial"
 ]
-AdvisorRole = Literal["user", "assistant"]
 
-# Caps: one chat turn and the whole transcript. Generous enough for a planning
-# conversation, bounded enough to keep prompt size (and free-tier cost) sane.
-MAX_MESSAGE_CHARS = 4000
-MAX_MESSAGES = 40
+# Caps keep prompt size (and free-tier cost) bounded.
+MAX_ANSWER_CHARS = 1000
+MAX_ANSWERS = 8
 
 
-class AdvisorMessage(BaseModel):
-    role: AdvisorRole
-    content: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+def _sanitize_district_name(value: str) -> str:
+    # district_name lands verbatim in the prompt; collapse whitespace (removes
+    # newline-based prompt injection) and reject an all-whitespace name.
+    collapsed = " ".join(value.split())
+    if not collapsed:
+        raise ValueError("district_name must not be blank")
+    return collapsed
 
 
 class AdvisorSnapshot(BaseModel):
     """Compact district-data context the frontend assembles from its cache and
-    sends with each turn (Option A thin proxy). Reuses the existing read-model
+    sends with the request (Option A thin proxy). Reuses the existing read-model
     types so the advisor's view of the data cannot drift from the panel's."""
 
     current_risk: float | None = Field(default=None, ge=0, le=100)
@@ -413,44 +415,81 @@ class AdvisorSnapshot(BaseModel):
     )
     permeability_index: float | None = Field(default=None, ge=0, le=1)
     # Pipeline-produced enum labels; length-capped since they are interpolated
-    # verbatim into the system prompt (a direct caller could otherwise send
-    # arbitrary-length strings).
+    # verbatim into the prompt (a direct caller could otherwise send arbitrary
+    # strings).
     permeability_class: str | None = Field(default=None, max_length=64)
     recharge_value: float | None = None
     recharge_label: str | None = Field(default=None, max_length=64)
     net_infiltration_mm: float | None = None
 
 
-class AdvisorChatRequest(BaseModel):
+# --- Step 1: intake questions ---------------------------------------------- #
+
+
+class AdvisorQuestion(BaseModel):
+    id: str = Field(max_length=40, description="Stable snake_case field id.")
+    question: str = Field(min_length=1, max_length=300)
+    hint: str | None = Field(default=None, max_length=120, description="Example answer.")
+
+
+class AdvisorQuestionsRequest(BaseModel):
     district_name: str = Field(min_length=1, max_length=120)
     need: AdvisorNeed
     snapshot: AdvisorSnapshot
-    messages: list[AdvisorMessage] = Field(min_length=1, max_length=MAX_MESSAGES)
 
     @field_validator("district_name")
     @classmethod
-    def _collapse_whitespace(cls, value: str) -> str:
-        # district_name lands verbatim in the system prompt; collapsing
-        # whitespace removes newline-based prompt-injection attempts and
-        # rejects an all-whitespace name.
-        collapsed = " ".join(value.split())
-        if not collapsed:
-            raise ValueError("district_name must not be blank")
-        return collapsed
+    def _clean_district(cls, value: str) -> str:
+        return _sanitize_district_name(value)
 
-    @field_validator("messages")
+
+class AdvisorQuestionsResponse(BaseModel):
+    questions: list[AdvisorQuestion]
+    model: str = Field(description="OpenRouter model id that produced the questions.")
+
+
+# --- Step 2: structured report --------------------------------------------- #
+
+
+class AdvisorAnswer(BaseModel):
+    question: str = Field(min_length=1, max_length=300, description="Echoed question.")
+    answer: str = Field(default="", max_length=MAX_ANSWER_CHARS)
+
+
+class AdvisorReportRequest(BaseModel):
+    district_name: str = Field(min_length=1, max_length=120)
+    need: AdvisorNeed
+    snapshot: AdvisorSnapshot
+    answers: list[AdvisorAnswer] = Field(default_factory=list, max_length=MAX_ANSWERS)
+
+    @field_validator("district_name")
     @classmethod
-    def _last_turn_is_user(cls, value: list[AdvisorMessage]) -> list[AdvisorMessage]:
-        # The model only replies to a user turn; a transcript ending on an
-        # assistant message is a client bug, so reject it loudly.
-        if value[-1].role != "user":
-            raise ValueError("the last message must have role 'user'")
-        return value
+    def _clean_district(cls, value: str) -> str:
+        return _sanitize_district_name(value)
 
 
-class AdvisorChatResponse(BaseModel):
-    reply: str = Field(description="The assistant's reply for this turn.")
-    model: str = Field(description="OpenRouter model id that produced the reply.")
+class AdvisorActionPhase(BaseModel):
+    timeframe: str = Field(default="", description="e.g. 'Immediate (0-1 month)'.")
+    actions: list[str] = Field(default_factory=list)
+
+
+class AdvisorReport(BaseModel):
+    """The structured report. Every field is defaulted so a partial (or
+    coerced) model response still validates and renders."""
+
+    headline: str = ""
+    outlook: str = Field(default="", description="Short outlook tag.")
+    situation_assessment: str = ""
+    your_context: str = ""
+    key_findings: list[str] = Field(default_factory=list)
+    action_plan: list[AdvisorActionPhase] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    monitoring: list[str] = Field(default_factory=list)
+
+
+class AdvisorReportResponse(BaseModel):
+    report: AdvisorReport
+    model: str = Field(description="OpenRouter model id that produced the report.")
 
 
 class AdvisorConfigResponse(BaseModel):

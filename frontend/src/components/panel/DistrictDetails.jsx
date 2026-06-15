@@ -12,7 +12,7 @@ import {
 import { trendFromHistory } from '../../lib/risk.js';
 import { buildSnapshot } from '../../lib/advisor.js';
 import { adminUnitNoun } from '../../lib/adminUnits.js';
-import AdvisorChat from './AdvisorChat.jsx';
+import AdvisorPlanner from './AdvisorPlanner.jsx';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
@@ -108,7 +108,7 @@ export default function DistrictDetails({ name }) {
       {advisorConfig.data?.enabled && (
         <section aria-label="AI water-planning advisor">
           <SectionTitle>Plan with AI</SectionTitle>
-          <AdvisorChat key={name} district={name} snapshot={advisorSnapshot} />
+          <AdvisorPlanner key={name} district={name} snapshot={advisorSnapshot} />
         </section>
       )}
 
