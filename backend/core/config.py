@@ -57,7 +57,10 @@ class Settings(BaseSettings):
     # and the UI hides the section, mirroring how optional push (Firebase) is
     # treated -- degrade quietly, never hard-fail at startup.
     openrouter_api_key: str = ""
-    openrouter_model: str = "google/gemma-4-26b-a4b-it:free"
+    # A different provider than Google's Gemma free pool (which throttles
+    # aggressively); no :free model is immune to upstream 429s, but this spreads
+    # the load. Override via AQUASIGNAL_OPENROUTER_MODEL.
+    openrouter_model: str = "openai/gpt-oss-20b:free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     @field_validator("openrouter_base_url")

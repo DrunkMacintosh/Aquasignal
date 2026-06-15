@@ -16,6 +16,7 @@ Design notes:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import httpx
@@ -30,6 +31,10 @@ LOG = logging.getLogger("aquasignal.advisor")
 _MAX_TOKENS = 900
 _TEMPERATURE = 0.4
 _TIMEOUT_SECONDS = 60.0
+# Free models share an upstream pool and return 429 transiently ("retry
+# shortly"). Retry a couple of times with a short backoff before giving up; the
+# total stays well inside the client's request timeout.
+_RETRY_BACKOFF_SECONDS = (1.0, 2.0)
 
 # Human-readable goal + the angle the advisor should reason from. Keys match
 # AdvisorNeed (schemas.py) and ADVISOR_NEEDS (frontend lib/advisor.js).
@@ -59,6 +64,14 @@ NEED_GUIDANCE: dict[AdvisorNeed, tuple[str, str]] = {
 
 class AdvisorError(RuntimeError):
     """Any failure talking to OpenRouter (timeout, non-2xx, malformed body)."""
+
+
+class AdvisorRateLimited(AdvisorError):
+    """OpenRouter (or its upstream provider) is rate-limiting us (HTTP 429).
+
+    Distinct from AdvisorError so the router can answer 429 ("busy, retry") --
+    a transient, retryable condition -- instead of a 502.
+    """
 
 
 def _format_number(value: float | None, unit: str = "", digits: int = 1) -> str:
@@ -186,20 +199,34 @@ async def chat(
     }
     url = f"{settings.openrouter_base_url.rstrip('/')}/chat/completions"
 
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
-            response = await client.post(url, headers=headers, json=payload)
-    except httpx.HTTPError as exc:
-        LOG.warning("OpenRouter request failed: %s", exc)
-        raise AdvisorError("could not reach the model provider") from exc
+    async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+        for attempt in range(len(_RETRY_BACKOFF_SECONDS) + 1):
+            try:
+                response = await client.post(url, headers=headers, json=payload)
+            except httpx.HTTPError as exc:
+                LOG.warning("OpenRouter request failed: %s", exc)
+                raise AdvisorError("could not reach the model provider") from exc
 
-    if response.status_code != httpx.codes.OK:
-        LOG.warning(
-            "OpenRouter returned %s: %s", response.status_code, response.text[:500]
-        )
-        raise AdvisorError(
-            f"model provider returned status {response.status_code}"
-        )
+            if response.status_code == httpx.codes.OK:
+                break
+
+            if response.status_code == httpx.codes.TOO_MANY_REQUESTS:
+                LOG.warning(
+                    "OpenRouter 429 (attempt %d): %s",
+                    attempt + 1,
+                    response.text[:300],
+                )
+                if attempt < len(_RETRY_BACKOFF_SECONDS):
+                    await asyncio.sleep(_RETRY_BACKOFF_SECONDS[attempt])
+                    continue
+                raise AdvisorRateLimited("model provider is rate-limited")
+
+            LOG.warning(
+                "OpenRouter returned %s: %s", response.status_code, response.text[:500]
+            )
+            raise AdvisorError(
+                f"model provider returned status {response.status_code}"
+            )
 
     try:
         data = response.json()
