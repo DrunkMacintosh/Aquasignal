@@ -158,12 +158,19 @@ export async function fetchAdvisorConfig() {
  * new user turn.
  */
 export async function sendAdvisorChat({ districtName, need, snapshot, messages }) {
-  const { data } = await api.post('/advisor/chat', {
-    district_name: districtName,
-    need,
-    snapshot,
-    messages,
-  });
+  const { data } = await api.post(
+    '/advisor/chat',
+    {
+      district_name: districtName,
+      need,
+      snapshot,
+      messages,
+    },
+    // LLM generation (plus a couple of 429 retries server-side) routinely
+    // exceeds the default 30s; allow more than the backend's 60s upstream
+    // timeout so a slow-but-successful reply isn't cut off client-side.
+    { timeout: 90_000 },
+  );
   return data; // { reply, model }
 }
 

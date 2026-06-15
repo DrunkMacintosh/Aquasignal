@@ -92,7 +92,7 @@ export default function AdvisorChat({ district, snapshot }) {
         )}
         {mutation.isError && (
           <p role="alert" className="text-xs font-medium text-risk-critical">
-            The advisor is unavailable right now. Send your message again to retry.
+            {advisorErrorMessage(mutation.error)}
           </p>
         )}
       </div>
@@ -122,6 +122,15 @@ export default function AdvisorChat({ district, snapshot }) {
       </div>
     </div>
   );
+}
+
+// A 429 is the (free) model being rate-limited upstream — transient and worth
+// retrying; anything else is treated as a genuine outage.
+function advisorErrorMessage(error) {
+  if (error?.response?.status === 429) {
+    return 'The advisor is busy right now (high demand). Wait a moment, then send again.';
+  }
+  return 'The advisor is unavailable right now. Send your message again to retry.';
 }
 
 function ChatBubble({ role, content }) {

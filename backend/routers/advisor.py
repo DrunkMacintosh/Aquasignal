@@ -13,7 +13,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request, status
 
-from core.advisor import AdvisorError, build_system_prompt, chat
+from core.advisor import AdvisorError, AdvisorRateLimited, build_system_prompt, chat
 from core.config import get_settings
 from core.ratelimit import ADVISOR_RATE_LIMIT, limiter
 from models.schemas import (
@@ -76,6 +76,14 @@ async def post_advisor_chat(
 
     try:
         reply = await chat(messages, settings=settings)
+    except AdvisorRateLimited as exc:
+        # Transient: the (free) model's upstream pool is busy. Tell the client
+        # to retry rather than implying the feature is broken.
+        LOG.warning("Advisor rate-limited for %s: %s", body.district_name, exc)
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="The AI advisor is busy right now. Please try again in a moment.",
+        ) from exc
     except AdvisorError as exc:
         LOG.warning("Advisor chat failed for %s: %s", body.district_name, exc)
         raise HTTPException(

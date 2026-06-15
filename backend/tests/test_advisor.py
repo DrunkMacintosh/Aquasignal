@@ -3,13 +3,16 @@ behaviour. No test here touches the network -- the OpenRouter call is mocked
 and the advisor endpoints have no database dependency, so TestClient is used
 without the lifespan (no DB connection is attempted)."""
 
+import asyncio
+
 import pytest
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app import app
-from core.advisor import build_system_prompt
+from core import advisor as advisor_mod
+from core.advisor import AdvisorRateLimited, build_system_prompt, chat
 from core.config import get_settings
 from core.ratelimit import limiter
 from core.security import get_current_user
@@ -246,3 +249,103 @@ def test_chat_maps_provider_failure_to_502(monkeypatch):
         },
     )
     assert response.status_code == 502
+
+
+def test_chat_maps_rate_limit_to_429(monkeypatch):
+    configured = get_settings().model_copy(update={"openrouter_api_key": "test-key"})
+    monkeypatch.setattr("routers.advisor.get_settings", lambda: configured)
+
+    async def rate_limited(messages, *, settings):
+        raise AdvisorRateLimited("busy")
+
+    monkeypatch.setattr("routers.advisor.chat", rate_limited)
+
+    response = client.post(
+        "/advisor/chat",
+        json={
+            "district_name": "Long An",
+            "need": "agriculture",
+            "snapshot": {},
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    assert response.status_code == 429
+
+
+# --------------------------------------------------------------------------- #
+# chat() transport behaviour (httpx mocked, no network, no real sleeps)
+# --------------------------------------------------------------------------- #
+
+
+class _FakeResponse:
+    def __init__(self, status_code, payload=None, text=""):
+        self.status_code = status_code
+        self._payload = payload
+        self.text = text
+
+    def json(self):
+        return self._payload
+
+
+class _FakeAsyncClient:
+    """Stands in for httpx.AsyncClient, returning a scripted sequence of
+    responses (one per .post call)."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = 0
+
+    def __call__(self, *args, **kwargs):  # httpx.AsyncClient(timeout=...)
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def post(self, *args, **kwargs):
+        self.calls += 1
+        return self._responses.pop(0)
+
+
+def _run_chat(monkeypatch, responses):
+    fake = _FakeAsyncClient(responses)
+    monkeypatch.setattr(advisor_mod.httpx, "AsyncClient", fake)
+
+    async def _no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(advisor_mod.asyncio, "sleep", _no_sleep)
+    settings = get_settings().model_copy(update={"openrouter_api_key": "k"})
+    messages = [{"role": "user", "content": "hi"}]
+    return fake, asyncio.run(chat(messages, settings=settings))
+
+
+def test_chat_returns_content_on_success(monkeypatch):
+    ok = _FakeResponse(200, {"choices": [{"message": {"content": "  the plan  "}}]})
+    _, reply = _run_chat(monkeypatch, [ok])
+    assert reply == "the plan"  # trimmed
+
+
+def test_chat_retries_on_429_then_succeeds(monkeypatch):
+    busy = _FakeResponse(429, text="rate limited")
+    ok = _FakeResponse(200, {"choices": [{"message": {"content": "plan"}}]})
+    fake, reply = _run_chat(monkeypatch, [busy, ok])
+    assert reply == "plan"
+    assert fake.calls == 2  # retried once after the 429
+
+
+def test_chat_raises_rate_limited_after_exhausting_retries(monkeypatch):
+    busy = [_FakeResponse(429, text="rate limited") for _ in range(3)]
+    fake = _FakeAsyncClient(busy)
+    monkeypatch.setattr(advisor_mod.httpx, "AsyncClient", fake)
+
+    async def _no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(advisor_mod.asyncio, "sleep", _no_sleep)
+    settings = get_settings().model_copy(update={"openrouter_api_key": "k"})
+    with pytest.raises(AdvisorRateLimited):
+        asyncio.run(chat([{"role": "user", "content": "hi"}], settings=settings))
+    assert fake.calls == 3  # 1 initial + 2 retries (len of backoff tuple)
