@@ -8,7 +8,7 @@ This guide takes you from zero to a live system using only free tiers:
 | API | [Render](https://render.com) | runs the FastAPI backend |
 | Dashboard | [Vercel](https://vercel.com) | serves the React app on a global CDN |
 | Monthly pipeline | GitHub Actions | fetches satellite data, re-scores, on the 5th |
-| ML models | bundled in this repo (4.3 MB) | Hugging Face Hub optional, see §7 |
+| ML models | [Hugging Face Hub](https://huggingface.co) | pulled at startup (Render) and by CI; see §7 — **required**, the models are no longer in git |
 
 **Before you start** you need: a GitHub account with this repository pushed to
 it (**public** repo — scheduled workflow minutes are free only on public
@@ -79,17 +79,21 @@ On the **Variables** tab, click **New repository variable**:
 | Name | Value |
 |---|---|
 | `RENDER_URL` | leave for §3.4 — e.g. `https://aquasignal-api.onrender.com` |
+| `HF_REPO_ID` | your Hugging Face model repo from §7, e.g. `your-username/aquasignal-models` (the bootstrap & monthly workflows fetch the models from here) |
 
 ## 3. Render — the API (~10 min)
 
 1. Go to **https://render.com** → **Get Started** → sign in with GitHub.
 2. Dashboard → **New +** → **Blueprint** → select your repository → Render
    reads [`render.yaml`](render.yaml) and shows `aquasignal-api` → **Apply**.
-3. It will ask for the two `sync: false` values:
+3. It will ask for the `sync: false` values:
    - `AQUASIGNAL_DATABASE_URL` → the same Session-pooler string (the plain
      `postgresql://` form is fine — the backend adds its async driver itself)
    - `AQUASIGNAL_CORS_ORIGINS` → type `["http://localhost:3000"]` for now;
      you'll replace it with your Vercel URL in §4.4.
+   - `HF_REPO_ID` → your Hugging Face model repo from §7, e.g.
+     `your-username/aquasignal-models`. Required — the models are not in git;
+     `start.sh` downloads them at boot to the paths already set in `render.yaml`.
 4. After the first deploy finishes (~5 min): copy the service URL shown at
    the top (e.g. `https://aquasignal-api.onrender.com`) into the GitHub
    **variable** `RENDER_URL`. Then open the service → **Environment** → copy
@@ -144,25 +148,34 @@ On the **Variables** tab, click **New repository variable**:
    banner for ~30 s, then the app heals itself. That's normal on the free
    tier.
 
-## 7. Optional: models on Hugging Face Hub
+## 7. Models on Hugging Face Hub (required)
 
-The two model files ship inside the repo (`downscaler.pkl` 1.8 MB,
-`forecaster.pt` 2.5 MB), so nothing is required. If they outgrow git or must
-become private:
+The model files are **not** in git — the full-data downscaler random forest is
+~670 MB, past GitHub's 100 MB limit — so they live on the Hub and are pulled at
+startup (Render) and before each scoring run (the CI workflows). You only upload
+them once.
 
 ```bash
-pip install -U "huggingface_hub[cli]"
-huggingface-cli login                      # paste a token from hf.co/settings/tokens
-huggingface-cli repo create aquasignal-models --type model
-huggingface-cli upload YOUR-USERNAME/aquasignal-models downscaler.pkl
-huggingface-cli upload YOUR-USERNAME/aquasignal-models forecaster.pt
+pip install -U huggingface_hub
+hf auth login                              # paste a WRITE token from hf.co/settings/tokens
+# Creates the repo on first upload (add --private to keep it private):
+hf upload YOUR-USERNAME/aquasignal-models downscaler.pkl downscaler.pkl
+hf upload YOUR-USERNAME/aquasignal-models forecaster.pt  forecaster.pt
 ```
 
-Then on Render add: `HF_REPO_ID=YOUR-USERNAME/aquasignal-models`,
-`HF_TOKEN=<token>` (private repos only),
-`AQUASIGNAL_DOWNSCALER_PATH=/tmp/models/downscaler.pkl`,
-`AQUASIGNAL_FORECASTER_PATH=/tmp/models/forecaster.pt`. `start.sh` downloads
-them before the API boots and skips the download when they're already there.
+Wire it up in three places, all pointing at the same `YOUR-USERNAME/aquasignal-models`:
+
+- **Render** (§3.3): `HF_REPO_ID`, plus `HF_TOKEN` for a private repo. The
+  download paths (`AQUASIGNAL_DOWNSCALER_PATH` / `AQUASIGNAL_FORECASTER_PATH` =
+  `/tmp/models/...`) are already set in `render.yaml`; `start.sh` downloads the
+  files before the API boots and skips the download when they're already there.
+- **GitHub Actions** (§2): the `HF_REPO_ID` repository **variable** — the
+  bootstrap and monthly workflows fetch the models to the repo root before
+  scoring. Add `HF_TOKEN` as a repository **secret** too if the repo is private.
+
+> Retraining the model (e.g. after a feature change) produces a new
+> `downscaler.pkl` locally — re-run the two `hf upload` commands to publish it.
+> Nothing in git changes.
 
 ## Troubleshooting
 
@@ -173,4 +186,6 @@ them before the API boots and skips the download when they're already there.
 | Browser console shows CORS errors | `AQUASIGNAL_CORS_ORIGINS` must be a JSON list containing your exact Vercel origin, e.g. `["https://aquasignal.vercel.app"]` |
 | Map loads but provinces are grey | Bootstrap workflow hasn't completed — check the Actions tab |
 | "Service warming up…" never clears | Render service crashed — check its **Logs** tab in the Render dashboard |
+| `/health` shows `"models_loaded":false` | `HF_REPO_ID` not set on Render (§3.3/§7), or the HF repo/file names don't match — the API still serves cached scores, but it's a sign the models didn't download |
+| Bootstrap/monthly run fails with `FileNotFoundError: downscaler.pkl` | The `HF_REPO_ID` repository **variable** is missing (§2/§7) — the workflow couldn't fetch the models before scoring |
 | Monthly run fails with Earthdata 401 | Re-check `EARTHDATA_USER`/`EARTHDATA_PASS`; log attached in the Discord message |

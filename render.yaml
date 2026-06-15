@@ -26,13 +26,20 @@ services:
         generateValue: true # Render mints a random secret on first deploy
       - key: AQUASIGNAL_INTERNAL_API_TOKEN
         generateValue: true # copy into the GitHub secret of the same name (cron uses it)
+      # --- ML models on Hugging Face Hub (required: models are not in git;
+      #     the downscaler RF is ~670 MB). start.sh downloads them to
+      #     /tmp/models before the API boots. See DEPLOY.md §7. -------------
+      - key: HF_REPO_ID
+        sync: false # your HF model repo, e.g. your-username/aquasignal-models
+      - key: HF_TOKEN
+        sync: false # only for a private HF repo
+      - key: AQUASIGNAL_DOWNSCALER_PATH
+        value: /tmp/models/downscaler.pkl
+      - key: AQUASIGNAL_FORECASTER_PATH
+        value: /tmp/models/forecaster.pt
       # --- optional ---------------------------------------------------------
       - key: FIREBASE_CREDENTIALS_JSON
         sync: false # base64 of the service-account JSON; omit to run without push alerts
-      - key: HF_REPO_ID
-        sync: false # only when models live on Hugging Face instead of the repo
-      - key: HF_TOKEN
-        sync: false # only for a private HF repo
       # NOTE: EARTHDATA_USER/PASS and the Earth Engine credentials are NOT set
       # here on purpose — the API never ingests satellite data. They belong
       # only to the GitHub Actions cron (smaller blast radius if leaked).

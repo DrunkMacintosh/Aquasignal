@@ -17,8 +17,9 @@ if [ -n "${FIREBASE_CREDENTIALS_JSON:-}" ]; then
   echo "start.sh: Firebase credentials written to /tmp/firebase.json"
 fi
 
-# 2. Model artifacts: no-op when using the repo-bundled files, downloads
-#    from Hugging Face Hub when HF_REPO_ID is set.
+# 2. Model artifacts: download from Hugging Face Hub when HF_REPO_ID is set
+#    (required -- the models are no longer committed to git; see DEPLOY.md §7).
+#    Idempotent: skips files already on disk.
 python -m models.download
 
 # 3. Database schema: idempotent, brings Supabase to the latest revision.
