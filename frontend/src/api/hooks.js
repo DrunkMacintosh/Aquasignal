@@ -4,6 +4,7 @@
 // usable and the UI flags it as stale.
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import {
+  fetchAdvisorConfig,
   fetchAlertHistory,
   fetchCellForecast,
   fetchCellHistory,
@@ -125,6 +126,18 @@ export function useDistrictPermeability(districtName) {
     enabled: Boolean(districtName),
     staleTime: 30 * MINUTE,
     gcTime: DAY,
+  });
+}
+
+// Advisor availability rarely changes within a session, so cache it for the
+// day; the chat itself is a mutation, not a query.
+export function useAdvisorConfig() {
+  return useQuery({
+    queryKey: ['advisor-config'],
+    queryFn: fetchAdvisorConfig,
+    staleTime: DAY,
+    gcTime: DAY,
+    retry: 1,
   });
 }
 
