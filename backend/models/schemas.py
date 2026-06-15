@@ -372,6 +372,97 @@ class TriggerSummary(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# AI advisor (OpenRouter-backed water-planning chat)
+# --------------------------------------------------------------------------- #
+
+# The planning goals a user can choose. Kept in sync with ADVISOR_NEEDS on the
+# frontend (lib/advisor.js) and the guidance map in core/advisor.py.
+AdvisorNeed = Literal[
+    "water_sustainability", "agriculture", "urban_supply", "industrial"
+]
+AdvisorRole = Literal["user", "assistant"]
+
+# Caps: one chat turn and the whole transcript. Generous enough for a planning
+# conversation, bounded enough to keep prompt size (and free-tier cost) sane.
+MAX_MESSAGE_CHARS = 4000
+MAX_MESSAGES = 40
+
+
+class AdvisorMessage(BaseModel):
+    role: AdvisorRole
+    content: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+
+
+class AdvisorSnapshot(BaseModel):
+    """Compact district-data context the frontend assembles from its cache and
+    sends with each turn (Option A thin proxy). Reuses the existing read-model
+    types so the advisor's view of the data cannot drift from the panel's."""
+
+    current_risk: float | None = Field(default=None, ge=0, le=100)
+    risk_level: RiskLevel | None = None
+    trend: TrendLabel | None = None
+    latest_month: str | None = Field(default=None, pattern=MONTH_PATTERN)
+    history: list[HistoryPoint] = Field(
+        default_factory=list, description="Recent observed risk, ascending by month."
+    )
+    forecast: list[ForecastPoint] = Field(
+        default_factory=list, description="6-month outlook, ascending by month."
+    )
+    satellite: list[SatelliteMonth] = Field(
+        default_factory=list, description="Recent raw observations, ascending by month."
+    )
+    permeability_index: float | None = Field(default=None, ge=0, le=1)
+    # Pipeline-produced enum labels; length-capped since they are interpolated
+    # verbatim into the system prompt (a direct caller could otherwise send
+    # arbitrary-length strings).
+    permeability_class: str | None = Field(default=None, max_length=64)
+    recharge_value: float | None = None
+    recharge_label: str | None = Field(default=None, max_length=64)
+    net_infiltration_mm: float | None = None
+
+
+class AdvisorChatRequest(BaseModel):
+    district_name: str = Field(min_length=1, max_length=120)
+    need: AdvisorNeed
+    snapshot: AdvisorSnapshot
+    messages: list[AdvisorMessage] = Field(min_length=1, max_length=MAX_MESSAGES)
+
+    @field_validator("district_name")
+    @classmethod
+    def _collapse_whitespace(cls, value: str) -> str:
+        # district_name lands verbatim in the system prompt; collapsing
+        # whitespace removes newline-based prompt-injection attempts and
+        # rejects an all-whitespace name.
+        collapsed = " ".join(value.split())
+        if not collapsed:
+            raise ValueError("district_name must not be blank")
+        return collapsed
+
+    @field_validator("messages")
+    @classmethod
+    def _last_turn_is_user(cls, value: list[AdvisorMessage]) -> list[AdvisorMessage]:
+        # The model only replies to a user turn; a transcript ending on an
+        # assistant message is a client bug, so reject it loudly.
+        if value[-1].role != "user":
+            raise ValueError("the last message must have role 'user'")
+        return value
+
+
+class AdvisorChatResponse(BaseModel):
+    reply: str = Field(description="The assistant's reply for this turn.")
+    model: str = Field(description="OpenRouter model id that produced the reply.")
+
+
+class AdvisorConfigResponse(BaseModel):
+    enabled: bool = Field(
+        description="True when an OpenRouter key is configured server-side."
+    )
+    model: str | None = Field(
+        default=None, description="Active model id, or null when disabled."
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Health
 # --------------------------------------------------------------------------- #
 

@@ -25,6 +25,7 @@ from core.ratelimit import limiter
 from models.download import ensure_models
 from models.schemas import HealthResponse
 from routers import (
+    advisor,
     alerts,
     auth,
     export,
@@ -101,6 +102,9 @@ app.include_router(history.router)
 app.include_router(satellite.router)
 app.include_router(hydrogeology.router)
 app.include_router(export.router)
+# Advisor: GET /advisor/config is public; POST /advisor/chat proxies to
+# OpenRouter (key held server-side) and is rate-limited per IP.
+app.include_router(advisor.router)
 # alerts wires its guards per-endpoint: subscribe / unsubscribe / acknowledge
 # require a JWT, GET /alerts/history is public, and /alerts/trigger uses the
 # internal cron token.

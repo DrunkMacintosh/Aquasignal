@@ -1,14 +1,18 @@
 // District mode: everything maps 1:1 onto district-scoped endpoints, all
 // aggregated with the same overlap-area weights — risk score, history,
 // forecast, and the raw satellite observations behind them.
+import { useMemo } from 'react';
 import {
+  useAdvisorConfig,
   useDistrictForecast,
   useDistrictHistory,
   useDistrictPermeability,
   useDistrictSatellite,
 } from '../../api/hooks.js';
 import { trendFromHistory } from '../../lib/risk.js';
+import { buildSnapshot } from '../../lib/advisor.js';
 import { adminUnitNoun } from '../../lib/adminUnits.js';
+import AdvisorChat from './AdvisorChat.jsx';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
@@ -24,7 +28,21 @@ export default function DistrictDetails({ name }) {
   const forecast = useDistrictForecast(name);
   const satellite = useDistrictSatellite(name);
   const permeability = useDistrictPermeability(name);
+  const advisorConfig = useAdvisorConfig();
   const unitNoun = adminUnitNoun(name);
+
+  // Built from whatever is loaded so far; every field is null-safe. Sent to the
+  // advisor as the location's data context (Option A thin proxy).
+  const advisorSnapshot = useMemo(
+    () =>
+      buildSnapshot({
+        monthly: history.data?.monthly,
+        forecast: forecast.data?.forecast,
+        satellite: satellite.data?.observations,
+        permeability: permeability.data,
+      }),
+    [history.data, forecast.data, satellite.data, permeability.data],
+  );
 
   if (history.isPending) return <PanelSkeleton />;
   if (history.isError) {
@@ -86,6 +104,13 @@ export default function DistrictDetails({ name }) {
           isError={permeability.isError}
         />
       </section>
+
+      {advisorConfig.data?.enabled && (
+        <section aria-label="AI water-planning advisor">
+          <SectionTitle>Plan with AI</SectionTitle>
+          <AdvisorChat key={name} district={name} snapshot={advisorSnapshot} />
+        </section>
+      )}
 
       <section aria-label="Reports">
         <SectionTitle>Reports for your supervisor</SectionTitle>

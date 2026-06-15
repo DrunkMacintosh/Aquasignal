@@ -143,6 +143,31 @@ export async function fetchDistrictPermeability(districtName) {
 }
 
 // ---------------------------------------------------------------------------
+// AI advisor (OpenRouter-backed water-planning chat)
+// ---------------------------------------------------------------------------
+
+/** Whether the advisor is configured server-side, and which model is active. */
+export async function fetchAdvisorConfig() {
+  const { data } = await api.get('/advisor/config');
+  return data; // { enabled, model }
+}
+
+/**
+ * One chat turn. `messages` is the user/assistant transcript (the system
+ * prompt is built server-side from `snapshot`); the last message must be the
+ * new user turn.
+ */
+export async function sendAdvisorChat({ districtName, need, snapshot, messages }) {
+  const { data } = await api.post('/advisor/chat', {
+    district_name: districtName,
+    need,
+    snapshot,
+    messages,
+  });
+  return data; // { reply, model }
+}
+
+// ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
 
