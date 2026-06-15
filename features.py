@@ -57,7 +57,7 @@ FEATURES_COVARIATE = [
     "grace_anomaly", "sar_subsidence", "precipitation",
     "evapotranspiration", "temperature", "month_sin", "month_cos",
     "water_balance", "precip_3m", "grace_rel", "grace_trend",
-    "elevation_m", "slope_deg", "dist_coast_km",
+    "elevation_m", "slope_deg", "dist_coast_km", "permeability_index",
 ]
 
 LOG = logging.getLogger("aquasignal.features")
@@ -211,13 +211,14 @@ def build_model_frame(processed_dir: Path = PROCESSED_DIR) -> pd.DataFrame:
     df = engineer_labels(df)
     df = add_cyclic_month(df)
     static = load_static_features()
-    df = df.merge(
-        static[["cell_id", "elevation_m", "slope_deg", "dist_coast_km"]],
-        on="cell_id", how="left",
-    )
-    n_missing = df["elevation_m"].isna().sum()
-    if n_missing:
-        LOG.warning("%d rows missing static covariates; filling with land medians", n_missing)
-        for col in ["elevation_m", "slope_deg", "dist_coast_km"]:
+    static_cols = ["elevation_m", "slope_deg", "dist_coast_km", "permeability_index"]
+    df = df.merge(static[["cell_id", *static_cols]], on="cell_id", how="left")
+    # Fill each covariate's gaps with its own land median: a cell can be missing
+    # soil but not terrain (different source masks), so guard each column rather
+    # than gating on elevation alone.
+    for col in static_cols:
+        n_missing = int(df[col].isna().sum())
+        if n_missing:
+            LOG.warning("%d rows missing %s; filling with land median", n_missing, col)
             df[col] = df[col].fillna(df[col].median())
     return df.reset_index(drop=True)

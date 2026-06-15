@@ -132,6 +132,17 @@ export async function fetchDistrictSatellite(districtName, months = 24) {
 }
 
 // ---------------------------------------------------------------------------
+// Hydrogeology (soil permeability + recharge potential)
+// ---------------------------------------------------------------------------
+
+export async function fetchDistrictPermeability(districtName) {
+  const { data } = await api.get(
+    `/hydrogeology/district/${encodeURIComponent(districtName)}`,
+  );
+  return data; // { permeability_index, soil_ksat_mm_hr, permeability_class, recharge_*, ... }
+}
+
+// ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@
 import {
   useDistrictForecast,
   useDistrictHistory,
+  useDistrictPermeability,
   useDistrictSatellite,
 } from '../../api/hooks.js';
 import { trendFromHistory } from '../../lib/risk.js';
@@ -15,12 +16,14 @@ import RiskScoreCard from '../RiskScoreCard.jsx';
 import SatelliteObservations from '../SatelliteObservations.jsx';
 import Sparkline from '../Sparkline.jsx';
 import { PanelSkeleton } from '../Skeletons.jsx';
+import PermeabilityCard from './PermeabilityCard.jsx';
 import SectionTitle from './SectionTitle.jsx';
 
 export default function DistrictDetails({ name }) {
   const history = useDistrictHistory(name);
   const forecast = useDistrictForecast(name);
   const satellite = useDistrictSatellite(name);
+  const permeability = useDistrictPermeability(name);
   const unitNoun = adminUnitNoun(name);
 
   if (history.isPending) return <PanelSkeleton />;
@@ -72,6 +75,15 @@ export default function DistrictDetails({ name }) {
           observations={satellite.data?.observations}
           isLoading={satellite.isPending}
           isError={satellite.isError}
+        />
+      </section>
+
+      <section aria-label="Permeability and recharge">
+        <SectionTitle>Permeability &amp; recharge</SectionTitle>
+        <PermeabilityCard
+          data={permeability.data}
+          isLoading={permeability.isPending}
+          isError={permeability.isError}
         />
       </section>
 

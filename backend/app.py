@@ -24,7 +24,16 @@ from core.database import SessionFactory, engine
 from core.ratelimit import limiter
 from models.download import ensure_models
 from models.schemas import HealthResponse
-from routers import alerts, auth, export, forecast, history, risk, satellite
+from routers import (
+    alerts,
+    auth,
+    export,
+    forecast,
+    history,
+    hydrogeology,
+    risk,
+    satellite,
+)
 
 LOG = logging.getLogger("aquasignal.api")
 
@@ -90,6 +99,7 @@ app.include_router(risk.router)
 app.include_router(forecast.router)
 app.include_router(history.router)
 app.include_router(satellite.router)
+app.include_router(hydrogeology.router)
 app.include_router(export.router)
 # alerts wires its guards per-endpoint: subscribe / unsubscribe / acknowledge
 # require a JWT, GET /alerts/history is public, and /alerts/trigger uses the

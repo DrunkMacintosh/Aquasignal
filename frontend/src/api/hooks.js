@@ -10,6 +10,7 @@ import {
   fetchCellSatellite,
   fetchDistrictForecast,
   fetchDistrictHistory,
+  fetchDistrictPermeability,
   fetchDistrictRiskMap,
   fetchDistrictSatellite,
   fetchRiskMap,
@@ -109,6 +110,18 @@ export function useDistrictSatellite(districtName) {
   return useQuery({
     queryKey: ['satellite', 'district', districtName],
     queryFn: () => fetchDistrictSatellite(districtName),
+    enabled: Boolean(districtName),
+    staleTime: 30 * MINUTE,
+    gcTime: DAY,
+  });
+}
+
+// Soil permeability is static and recharge only moves with the monthly
+// pipeline, so it caches like the other monthly-cadence district reads.
+export function useDistrictPermeability(districtName) {
+  return useQuery({
+    queryKey: ['permeability', 'district', districtName],
+    queryFn: () => fetchDistrictPermeability(districtName),
     enabled: Boolean(districtName),
     staleTime: 30 * MINUTE,
     gcTime: DAY,

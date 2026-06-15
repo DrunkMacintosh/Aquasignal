@@ -98,6 +98,19 @@ _DISTRICT_HISTORY = text(f"""
     ORDER BY rs.month
 """)
 
+# Area-weighted mean of the static soil covariates over a district. Cells
+# without permeability data are excluded so the weights renormalise over the
+# cells that do report (same treatment satellite obs get in weighted_series).
+_DISTRICT_PERMEABILITY = text(f"""
+    SELECT SUM(gc.permeability_index * w.weight) / NULLIF(SUM(w.weight), 0)
+             AS permeability_index,
+           SUM(gc.soil_ksat_mm_hr * w.weight) / NULLIF(SUM(w.weight), 0)
+             AS soil_ksat_mm_hr
+    FROM ({_DISTRICT_WEIGHTS_SQL}) w
+    JOIN grid_cells gc ON gc.id = w.cell_id
+    WHERE gc.permeability_index IS NOT NULL
+""")
+
 # Overlap weights with centroids, for joining against the satellite parquets
 # (which are keyed by cell centroid lat/lon).
 _DISTRICT_CENTROID_WEIGHTS = text(f"""
@@ -184,6 +197,21 @@ async def district_history(
         _DISTRICT_HISTORY, {"district": district, "cutoff": cutoff}
     )
     return list(result.all())
+
+
+async def district_permeability(
+    db: AsyncSession, district: str
+) -> tuple[float | None, float | None]:
+    """Area-weighted (permeability_index, soil_ksat_mm_hr) for a district.
+
+    Returns (None, None) when no intersecting cell carries soil data -- e.g. an
+    all-ocean island province, or before scripts/load_permeability.py has run.
+    """
+    result = await db.execute(_DISTRICT_PERMEABILITY, {"district": district})
+    row = result.one()
+    if row.permeability_index is None:
+        return None, None
+    return float(row.permeability_index), float(row.soil_ksat_mm_hr)
 
 
 async def district_centroid_weights(

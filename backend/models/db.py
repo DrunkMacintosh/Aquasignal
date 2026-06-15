@@ -98,6 +98,12 @@ class GridCell(Base):
     geom_land: Mapped[WKBElement | None] = mapped_column(
         Geometry(geometry_type="MULTIPOLYGON", srid=SRID_WGS84, spatial_index=False)
     )
+    # Static soil covariates (sampled by static_features.py, backfilled by
+    # scripts/load_permeability.py). NULL = no soil data for this cell.
+    # permeability_index is the model covariate (0-1); soil_ksat_mm_hr is the
+    # raw saturated hydraulic conductivity kept for display.
+    permeability_index: Mapped[float | None] = mapped_column(Float)
+    soil_ksat_mm_hr: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

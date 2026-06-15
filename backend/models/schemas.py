@@ -226,6 +226,53 @@ class DistrictSatelliteResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Hydrogeology (soil permeability + derived recharge potential)
+# --------------------------------------------------------------------------- #
+
+
+class DistrictPermeabilityResponse(BaseModel):
+    district_name: str
+    aggregation: Literal["area_weighted_mean"] = "area_weighted_mean"
+    has_data: bool = Field(
+        description="False when no intersecting cell carries soil permeability data."
+    )
+    permeability_index: float | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="Area-weighted soil permeability, 0 (impermeable) to 1 (free-draining).",
+    )
+    soil_ksat_mm_hr: float | None = Field(
+        default=None,
+        description="Area-weighted saturated hydraulic conductivity (mm/hour).",
+    )
+    permeability_class: str | None = Field(
+        default=None,
+        description="Banded label: very low / low / moderate / high / very high.",
+    )
+    month: str | None = Field(
+        default=None,
+        pattern=MONTH_PATTERN,
+        description="Month whose water balance the recharge readout is computed for.",
+    )
+    net_infiltration_mm: float | None = Field(
+        default=None,
+        description="Water available to infiltrate that month: max(precip - evapotranspiration, 0), mm.",
+    )
+    recharge_value: float | None = Field(
+        default=None,
+        description=(
+            "Relative recharge potential (mm/month-equivalent): "
+            "permeability_index x net infiltration. A ranking indicator, not a "
+            "calibrated recharge rate."
+        ),
+    )
+    recharge_label: str | None = Field(
+        default=None, description="Banded label: minimal / low / moderate / high."
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Forecast
 # --------------------------------------------------------------------------- #
 
