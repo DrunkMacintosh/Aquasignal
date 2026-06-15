@@ -1,7 +1,6 @@
 // District mode: everything maps 1:1 onto district-scoped endpoints, all
 // aggregated with the same overlap-area weights — risk score, history,
 // forecast, and the raw satellite observations behind them.
-import { useMemo } from 'react';
 import {
   useAdvisorConfig,
   useDistrictForecast,
@@ -10,9 +9,7 @@ import {
   useDistrictSatellite,
 } from '../../api/hooks.js';
 import { trendFromHistory } from '../../lib/risk.js';
-import { buildSnapshot } from '../../lib/advisor.js';
 import { adminUnitNoun } from '../../lib/adminUnits.js';
-import AdvisorPlanner from './AdvisorPlanner.jsx';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
@@ -23,26 +20,13 @@ import { PanelSkeleton } from '../Skeletons.jsx';
 import PermeabilityCard from './PermeabilityCard.jsx';
 import SectionTitle from './SectionTitle.jsx';
 
-export default function DistrictDetails({ name }) {
+export default function DistrictDetails({ name, onPlanWithAi }) {
   const history = useDistrictHistory(name);
   const forecast = useDistrictForecast(name);
   const satellite = useDistrictSatellite(name);
   const permeability = useDistrictPermeability(name);
   const advisorConfig = useAdvisorConfig();
   const unitNoun = adminUnitNoun(name);
-
-  // Built from whatever is loaded so far; every field is null-safe. Sent to the
-  // advisor as the location's data context (Option A thin proxy).
-  const advisorSnapshot = useMemo(
-    () =>
-      buildSnapshot({
-        monthly: history.data?.monthly,
-        forecast: forecast.data?.forecast,
-        satellite: satellite.data?.observations,
-        permeability: permeability.data,
-      }),
-    [history.data, forecast.data, satellite.data, permeability.data],
-  );
 
   if (history.isPending) return <PanelSkeleton />;
   if (history.isError) {
@@ -69,6 +53,16 @@ export default function DistrictDetails({ name }) {
           No risk scores for this {unitNoun} yet — its grid cells fall outside the satellite
           coverage (open water or sensor gaps). Raw observations may still appear below.
         </p>
+      )}
+
+      {advisorConfig.data?.enabled && onPlanWithAi && (
+        <button
+          type="button"
+          onClick={onPlanWithAi}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-water/40 bg-water/10 px-4 py-2.5 text-sm font-semibold text-water transition-colors hover:bg-water/15 focus-visible:outline-water"
+        >
+          <span aria-hidden="true">✦</span> Plan your water use with AI
+        </button>
       )}
 
       <section aria-label="6-month forecast">
@@ -104,13 +98,6 @@ export default function DistrictDetails({ name }) {
           isError={permeability.isError}
         />
       </section>
-
-      {advisorConfig.data?.enabled && (
-        <section aria-label="AI water-planning advisor">
-          <SectionTitle>Plan with AI</SectionTitle>
-          <AdvisorPlanner key={name} district={name} snapshot={advisorSnapshot} />
-        </section>
-      )}
 
       <section aria-label="Reports">
         <SectionTitle>Reports for your supervisor</SectionTitle>
