@@ -101,7 +101,9 @@ export default function AdvisorPlanner({ district }) {
       </p>
 
       {questionsM.isPending && (
-        <p className="mt-2 text-xs italic text-ink-soft">Preparing a few questions…</p>
+        <p role="status" className="mt-2 flex items-center gap-1.5 text-xs italic text-ink-soft">
+          Preparing a few questions <LoadingDots />
+        </p>
       )}
       {questionsM.isError && (
         <ErrorRetry error={questionsM.error} onRetry={() => questionsM.mutate(need)} />
@@ -137,7 +139,13 @@ export default function AdvisorPlanner({ district }) {
 
           <div className="flex items-center gap-3">
             <button type="submit" disabled={reportM.isPending} className="btn-primary !py-2 text-sm">
-              {reportM.isPending ? 'Analyzing…' : 'Generate report'}
+              {reportM.isPending ? (
+                <span className="flex items-center gap-1.5">
+                  Analyzing <LoadingDots />
+                </span>
+              ) : (
+                'Generate report'
+              )}
             </button>
             <button
               type="button"
@@ -176,6 +184,18 @@ function NeedPicker({ district, onPick }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// Three dots that bounce in sequence — the "AI is working" indicator. Inherits
+// the surrounding text colour via bg-current; staggered delays make it run.
+function LoadingDots() {
+  return (
+    <span className="inline-flex items-center gap-1" aria-hidden="true">
+      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce" />
+      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce [animation-delay:0.15s]" />
+      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce [animation-delay:0.3s]" />
+    </span>
   );
 }
 
