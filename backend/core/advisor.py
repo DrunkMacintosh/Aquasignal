@@ -329,6 +329,13 @@ async def _complete(
                     continue
                 raise AdvisorRateLimited("model provider is rate-limited")
 
+            # Some providers reject the JSON-mode hint; drop it and retry once
+            # (the prompt still asks for JSON, and parsing is defensive).
+            if response.status_code == httpx.codes.BAD_REQUEST and "response_format" in payload:
+                LOG.warning("Provider rejected response_format; retrying without JSON mode")
+                payload.pop("response_format")
+                continue
+
             LOG.warning(
                 "OpenRouter returned %s: %s", response.status_code, response.text[:500]
             )

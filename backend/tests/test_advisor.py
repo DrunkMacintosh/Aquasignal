@@ -177,6 +177,21 @@ def test_snapshot_caps_label_field_length():
         AdvisorSnapshot(permeability_class="x" * 65)
 
 
+def test_base_url_host_allowlist():
+    from core.config import Settings
+
+    for url in (
+        "https://openrouter.ai/api/v1",
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        "https://api.groq.com/openai/v1",
+    ):
+        assert Settings(openrouter_base_url=url).openrouter_base_url == url
+    with pytest.raises(ValidationError):
+        Settings(openrouter_base_url="https://evil.example.com/v1")  # unknown host
+    with pytest.raises(ValidationError):
+        Settings(openrouter_base_url="http://openrouter.ai/api/v1")  # not https
+
+
 # --------------------------------------------------------------------------- #
 # Auth + rate-limit wiring
 # --------------------------------------------------------------------------- #
@@ -399,6 +414,23 @@ def test_complete_raises_rate_limited_after_retries(monkeypatch):
             _complete([{"role": "user", "content": "hi"}], settings=_settings(), max_tokens=10)
         )
     assert fake.calls == 3
+
+
+def test_complete_drops_response_format_on_400(monkeypatch):
+    fake = _patch_client(
+        monkeypatch, [_FakeResponse(400, text="bad response_format"), _content_response("ok")]
+    )
+    reply = asyncio.run(
+        _complete(
+            [{"role": "user", "content": "hi"}],
+            settings=_settings(),
+            max_tokens=10,
+            json_mode=True,
+        )
+    )
+    assert reply == "ok"
+    assert fake.calls == 2
+    assert "response_format" not in (fake.last_json or {})  # dropped on the retry
 
 
 def test_generate_questions_parses_model_json(monkeypatch):
