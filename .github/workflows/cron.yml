@@ -30,22 +30,6 @@ jobs:
         run: |
           pip install -r requirements.txt -r requirements-models.txt
 
-      # Models are HF-hosted, not in git (the downscaler RF is ~670 MB), so the
-      # checkout has no .pkl/.pt -- fetch them to the repo root where
-      # monthly_cron.py (models.py paths) expects them.
-      - name: Fetch ML models from Hugging Face
-        env:
-          HF_REPO_ID: ${{ vars.HF_REPO_ID }}
-        run: |
-          python - <<'PY'
-          import os, shutil
-          from huggingface_hub import hf_hub_download
-          repo = os.environ["HF_REPO_ID"]
-          for name in ("downscaler.pkl", "forecaster.pt"):
-              shutil.copy(hf_hub_download(repo, name), name)
-              print("fetched", name)
-          PY
-
       - name: Write Earth Engine service-account key
         env:
           GEE_PRIVATE_KEY_JSON: ${{ secrets.GEE_PRIVATE_KEY_JSON }}

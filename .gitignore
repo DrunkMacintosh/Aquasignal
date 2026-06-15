@@ -12,14 +12,8 @@ backend/secrets/
 # Cached raw downloads (pipeline re-fetches on demand; ~43 MB GRACE NetCDF)
 data/raw/
 
-# ML model artifacts -- hosted on Hugging Face Hub (set HF_REPO_ID; see
-# backend/models/download.py). Too large for git: the full-data downscaler RF
-# is ~670 MB. Kept on disk locally for dev/scoring; never committed.
-downscaler.pkl
-forecaster.pt
+# Training checkpoint (written mid-run, deleted on success) and run logs
 forecaster_checkpoint.pt
-
-# Transient run logs
 *.log
 
 # Tooling caches

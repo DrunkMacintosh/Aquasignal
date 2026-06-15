@@ -73,6 +73,12 @@ SEED = 42
 # is the mean per-horizon validation MAE in risk points.
 BASELINE_24M = {"rf_rmse": 8.95, "rf_mae": 7.96, "rf_r2": 0.692, "lstm_mae": 3.46}
 
+# Prefer the gradient-boosting downscaler unless the RF beats it by more than
+# this many RMSE points. On the full dataset the RF serialises ~150x larger
+# (~670 MB vs a few MB) -- the difference between deploying on a free-tier host
+# and OOMing on it -- so a sub-0.5-point, noise-level RMSE edge is not worth it.
+DOWNSCALER_RF_RMSE_MARGIN = 0.5
+
 HGB_GRID = [
     {"learning_rate": lr, "max_leaf_nodes": leaves, "l2_regularization": l2}
     for lr, leaves, l2 in product((0.05, 0.1), (31, 63), (0.0, 1.0))
@@ -681,7 +687,9 @@ def main() -> None:
 
     LOG.info("--- Phase 3: nested-CV gradient boosting vs RF ---")
     hgb_metrics, hgb_scatter, hgb_params = nested_cv_hist_gb(df, feature_cols)
-    if hgb_metrics["rmse"].mean() <= rf_metrics["rmse"].mean():
+    # Tie-break toward the small, deployable HGB model: pick the RF only if it
+    # wins by more than DOWNSCALER_RF_RMSE_MARGIN, not by noise.
+    if hgb_metrics["rmse"].mean() <= rf_metrics["rmse"].mean() + DOWNSCALER_RF_RMSE_MARGIN:
         model_type, win_metrics, win_scatter = "hist_gb", hgb_metrics, hgb_scatter
     else:
         model_type, win_metrics, win_scatter = "random_forest", rf_metrics, rf_scatter

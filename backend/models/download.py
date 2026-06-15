@@ -1,11 +1,9 @@
-"""Fetch ML model artifacts from Hugging Face Hub.
+"""Fetch ML model artifacts from Hugging Face Hub (optional override).
 
-The model files (downscaler.pkl, forecaster.pt) are NOT committed to git -- the
-full-data downscaler RF is ~670 MB, past GitHub's limit -- so they are hosted on
-the Hub instead (.gitignored locally). Set HF_REPO_ID and they are downloaded at
-startup. With HF_REPO_ID unset this is a no-op and the app uses whatever model
-files are already on disk (e.g. a local training run); a fresh deploy must set
-HF_REPO_ID or the artifacts will be missing.
+The repo already ships downscaler.pkl / forecaster.pt at the repo root
+(~4.3 MB combined), so by default there is nothing to download and this is a
+no-op. Setting HF_REPO_ID switches to Hub-hosted artifacts — the right move
+once models grow beyond comfortable git size or need to be private.
 
 Environment
 -----------
@@ -35,7 +33,7 @@ def ensure_models() -> None:
     """Download model files from HF Hub unless they already exist locally."""
     repo_id = os.environ.get("HF_REPO_ID")
     if not repo_id:
-        LOG.info("HF_REPO_ID not set -- using model files already on disk, if any")
+        LOG.info("HF_REPO_ID not set -- using model files bundled with the repo")
         return
 
     # Imported lazily so the API never needs huggingface_hub unless HF is used.
