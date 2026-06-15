@@ -2,21 +2,33 @@
 // Two modes share the shell:
 //   { type: 'cell', cell }      — opened by clicking a grid cell on the map
 //   { type: 'district', name }  — opened from the critical-alert banner
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { formatCellName } from '../lib/risk.js';
 import { adminUnitType } from '../lib/adminUnits.js';
 import CellDetails from './panel/CellDetails.jsx';
 import DistrictDetails from './panel/DistrictDetails.jsx';
+import AdvisorPopout from './panel/AdvisorPopout.jsx';
 
 export default function DistrictPanel({ selection, month, onClose }) {
+  const [advisorOpen, setAdvisorOpen] = useState(false);
+
+  // The advisor popout belongs to one selection; reset it whenever the
+  // selection changes (new district) or the panel closes.
+  useEffect(() => {
+    setAdvisorOpen(false);
+  }, [selection]);
+
   useEffect(() => {
     if (!selection) return undefined;
     const handleKey = (event) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      // Escape closes the popout first, then the panel on a second press.
+      if (advisorOpen) setAdvisorOpen(false);
+      else onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [selection, onClose]);
+  }, [selection, advisorOpen, onClose]);
 
   if (!selection) return null;
 
@@ -27,6 +39,7 @@ export default function DistrictPanel({ selection, month, onClose }) {
     : `${adminUnitType(selection.name)} overview`;
 
   return (
+    <>
     <aside
       role="dialog"
       aria-labelledby="panel-title"
@@ -58,9 +71,18 @@ export default function DistrictPanel({ selection, month, onClose }) {
         {isCell ? (
           <CellDetails cell={selection.cell} month={month} />
         ) : (
-          <DistrictDetails name={selection.name} month={month} />
+          <DistrictDetails
+            name={selection.name}
+            month={month}
+            onPlanWithAi={() => setAdvisorOpen(true)}
+          />
         )}
       </div>
     </aside>
+
+    {advisorOpen && !isCell && (
+      <AdvisorPopout district={selection.name} onClose={() => setAdvisorOpen(false)} />
+    )}
+    </>
   );
 }

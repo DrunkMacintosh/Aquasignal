@@ -2,13 +2,36 @@
 // short model-generated questions -> get a structured report. No open chat.
 // State is component-local and resets when the panel switches district (parent
 // keys this by district name).
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { fetchAdvisorQuestions, fetchAdvisorReport } from '../../api/client.js';
-import { ADVISOR_NEEDS, needLabel } from '../../lib/advisor.js';
+import {
+  useDistrictForecast,
+  useDistrictHistory,
+  useDistrictPermeability,
+  useDistrictSatellite,
+} from '../../api/hooks.js';
+import { ADVISOR_NEEDS, buildSnapshot, needLabel } from '../../lib/advisor.js';
 import ReportView from './ReportView.jsx';
 
-export default function AdvisorPlanner({ district, snapshot }) {
+export default function AdvisorPlanner({ district }) {
+  // Build the data snapshot from the (already-cached) district queries, so the
+  // popout only needs the district name.
+  const history = useDistrictHistory(district);
+  const forecast = useDistrictForecast(district);
+  const satellite = useDistrictSatellite(district);
+  const permeability = useDistrictPermeability(district);
+  const snapshot = useMemo(
+    () =>
+      buildSnapshot({
+        monthly: history.data?.monthly,
+        forecast: forecast.data?.forecast,
+        satellite: satellite.data?.observations,
+        permeability: permeability.data,
+      }),
+    [history.data, forecast.data, satellite.data, permeability.data],
+  );
+
   const [need, setNeed] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({}); // keyed by question id
