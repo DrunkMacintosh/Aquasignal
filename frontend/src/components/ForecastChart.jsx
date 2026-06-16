@@ -35,6 +35,10 @@ export default function ForecastChart({ points, isLoading }) {
         <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
           <XAxis
             dataKey="month"
+            // Force every month to label. Recharts defaults to interval="preserveEnd",
+            // which keeps the last tick and drops the colliding second-to-last one —
+            // in a 6-month window that silently hides the 5th month's label.
+            interval={0}
             tick={{ fontSize: 11, fontFamily: '"IBM Plex Mono", monospace', fill: '#51626C' }}
             tickLine={false}
             axisLine={{ stroke: 'rgba(28,43,51,0.18)' }}
