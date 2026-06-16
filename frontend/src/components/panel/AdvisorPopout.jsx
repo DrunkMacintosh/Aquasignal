@@ -9,7 +9,7 @@ export default function AdvisorPopout({ district, onClose }) {
     <aside
       role="dialog"
       aria-label="Plan your water use with AI"
-      className="fixed inset-0 z-40 flex flex-col bg-surface shadow-sheet animate-fade-up md:absolute md:inset-auto md:bottom-4 md:right-[26.5rem] md:top-[5.5rem] md:w-[440px] md:rounded-2xl md:border md:border-ink/10 md:shadow-card md:animate-slide-in-right"
+      className="fixed inset-0 z-40 flex flex-col bg-surface shadow-sheet animate-fade-up md:absolute md:inset-auto md:bottom-4 md:left-[14rem] md:right-[26.5rem] md:top-[5.5rem] md:rounded-2xl md:border md:border-ink/10 md:shadow-card md:animate-slide-in-right"
     >
       <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
         <div className="min-w-0">
