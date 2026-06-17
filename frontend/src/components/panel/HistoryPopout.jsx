@@ -10,9 +10,6 @@ import HistoryChart from '../HistoryChart.jsx';
 export default function HistoryPopout({ district, onClose }) {
   const history = useDistrictHistory(district);
   const monthly = history.data?.monthly;
-  const span = monthly?.length
-    ? `Last ${monthly.length} months · observed`
-    : 'Observed risk history';
 
   return (
     <aside
@@ -26,7 +23,7 @@ export default function HistoryPopout({ district, onClose }) {
             Risk history
           </h2>
           <p className="microlabel mt-1">
-            {district} · {span}
+            {district} · Past 2 years · observed
           </p>
         </div>
         <button
