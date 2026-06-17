@@ -17,3 +17,48 @@ export function historyTickInterval(count, maxLabels = 8) {
   if (!Number.isFinite(count) || count <= maxLabels) return 0;
   return Math.ceil(count / maxLabels) - 1;
 }
+
+/** Current calendar month as a 'YYYY-MM' key (local time). */
+export function currentMonthKey(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Ascending list of 'YYYY-MM' keys for a continuous window ending at `endMonth`
+ * and reaching `monthsBack` months before it — `monthsBack + 1` entries,
+ * inclusive of both ends. Year rollover is handled by Date's index normalising.
+ *
+ * @param {string} endMonth - last month in the window, 'YYYY-MM'
+ * @param {number} monthsBack - how many months before endMonth to start
+ * @returns {string[]}
+ */
+export function monthSequence(endMonth, monthsBack) {
+  const [year, month] = String(endMonth ?? '').split('-').map(Number);
+  if (!year || !month) return [];
+  const out = [];
+  for (let i = monthsBack; i >= 0; i--) {
+    const d = new Date(year, month - 1 - i, 1); // month is 1-based; Date normalises
+    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return out;
+}
+
+/**
+ * Left-join observed history `points` onto the fixed window running from
+ * `monthsBack` months before `endMonth` through `endMonth` (inclusive). Every
+ * slot is present so a chart spans the whole window regardless of which months
+ * were actually scored; months without an observation get `risk: null`, which
+ * recharts renders as a gap.
+ *
+ * @param {Array<{month: string, risk: number}>} [points]
+ * @param {string} endMonth - 'YYYY-MM'
+ * @param {number} monthsBack
+ * @returns {Array<{month: string, risk: number|null}>}
+ */
+export function historyWindow(points, endMonth, monthsBack) {
+  const byMonth = new Map((points ?? []).map((p) => [p.month, p]));
+  return monthSequence(endMonth, monthsBack).map((month) => ({
+    month,
+    risk: byMonth.has(month) ? byMonth.get(month).risk : null,
+  }));
+}
