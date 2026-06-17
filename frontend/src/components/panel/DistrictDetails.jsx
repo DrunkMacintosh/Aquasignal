@@ -20,7 +20,7 @@ import { PanelSkeleton } from '../Skeletons.jsx';
 import PermeabilityCard from './PermeabilityCard.jsx';
 import SectionTitle from './SectionTitle.jsx';
 
-export default function DistrictDetails({ name, onPlanWithAi }) {
+export default function DistrictDetails({ name, onPlanWithAi, onSeeHistory }) {
   const history = useDistrictHistory(name);
   const forecast = useDistrictForecast(name);
   const satellite = useDistrictSatellite(name);
@@ -66,7 +66,19 @@ export default function DistrictDetails({ name, onPlanWithAi }) {
       )}
 
       <section aria-label="6-month forecast">
-        <SectionTitle>6-month outlook ({unitNoun} average)</SectionTitle>
+        <div className="mb-2.5 flex items-baseline justify-between gap-3">
+          <h3 className="microlabel">6-month outlook ({unitNoun} average)</h3>
+          {onSeeHistory && monthly.length > 0 && (
+            <button
+              type="button"
+              onClick={onSeeHistory}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink focus-visible:outline-water"
+            >
+              See history
+              <span aria-hidden="true">→</span>
+            </button>
+          )}
+        </div>
         {forecast.isError ? (
           <p className="text-sm text-ink-soft">Forecast could not be loaded.</p>
         ) : (

@@ -8,27 +8,31 @@ import { adminUnitType } from '../lib/adminUnits.js';
 import CellDetails from './panel/CellDetails.jsx';
 import DistrictDetails from './panel/DistrictDetails.jsx';
 import AdvisorPopout from './panel/AdvisorPopout.jsx';
+import HistoryPopout from './panel/HistoryPopout.jsx';
 
 export default function DistrictPanel({ selection, month, onClose }) {
   const [advisorOpen, setAdvisorOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
-  // The advisor popout belongs to one selection; reset it whenever the
-  // selection changes (new district) or the panel closes.
+  // The popouts belong to one selection; reset them whenever the selection
+  // changes (new district) or the panel closes.
   useEffect(() => {
     setAdvisorOpen(false);
+    setHistoryOpen(false);
   }, [selection]);
 
   useEffect(() => {
     if (!selection) return undefined;
     const handleKey = (event) => {
       if (event.key !== 'Escape') return;
-      // Escape closes the popout first, then the panel on a second press.
+      // Escape closes an open popout first, then the panel on a second press.
       if (advisorOpen) setAdvisorOpen(false);
+      else if (historyOpen) setHistoryOpen(false);
       else onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [selection, advisorOpen, onClose]);
+  }, [selection, advisorOpen, historyOpen, onClose]);
 
   if (!selection) return null;
 
@@ -74,7 +78,16 @@ export default function DistrictPanel({ selection, month, onClose }) {
           <DistrictDetails
             name={selection.name}
             month={month}
-            onPlanWithAi={() => setAdvisorOpen(true)}
+            // The two popouts share the same docking area, so opening one
+            // dismisses the other.
+            onPlanWithAi={() => {
+              setHistoryOpen(false);
+              setAdvisorOpen(true);
+            }}
+            onSeeHistory={() => {
+              setAdvisorOpen(false);
+              setHistoryOpen(true);
+            }}
           />
         )}
       </div>
@@ -82,6 +95,9 @@ export default function DistrictPanel({ selection, month, onClose }) {
 
     {advisorOpen && !isCell && (
       <AdvisorPopout district={selection.name} onClose={() => setAdvisorOpen(false)} />
+    )}
+    {historyOpen && !isCell && (
+      <HistoryPopout district={selection.name} onClose={() => setHistoryOpen(false)} />
     )}
     </>
   );
