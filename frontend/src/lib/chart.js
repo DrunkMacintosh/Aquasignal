@@ -24,6 +24,18 @@ export function currentMonthKey(now = new Date()) {
 }
 
 /**
+ * The most recent 'YYYY-MM' present in `points`, or null when there are none.
+ * 'YYYY-MM' sorts lexicographically the same as chronologically, so a plain
+ * string max is correct. Used to anchor the history window to the latest
+ * *scored* month rather than the wall clock — observed data lags the calendar
+ * by months, so anchoring to "now" would push the whole series out of view.
+ */
+export function latestMonth(points) {
+  if (!points?.length) return null;
+  return points.reduce((max, p) => (p.month > max ? p.month : max), points[0].month);
+}
+
+/**
  * Ascending list of 'YYYY-MM' keys for a continuous window ending at `endMonth`
  * and reaching `monthsBack` months before it — `monthsBack + 1` entries,
  * inclusive of both ends. Year rollover is handled by Date's index normalising.

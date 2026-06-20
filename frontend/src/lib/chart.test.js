@@ -3,6 +3,7 @@ import {
   currentMonthKey,
   historyTickInterval,
   historyWindow,
+  latestMonth,
   monthSequence,
 } from './chart.js';
 
@@ -39,6 +40,23 @@ describe('currentMonthKey', () => {
     expect(currentMonthKey(new Date(2026, 5, 17))).toBe('2026-06'); // June
     expect(currentMonthKey(new Date(2025, 0, 1))).toBe('2025-01');
     expect(currentMonthKey(new Date(2024, 11, 31))).toBe('2024-12');
+  });
+});
+
+describe('latestMonth', () => {
+  test('returns the most recent month regardless of input order', () => {
+    expect(
+      latestMonth([{ month: '2024-06' }, { month: '2026-05' }, { month: '2025-01' }]),
+    ).toBe('2026-05');
+  });
+
+  test('handles a single point', () => {
+    expect(latestMonth([{ month: '2026-05' }])).toBe('2026-05');
+  });
+
+  test('returns null when there are no points', () => {
+    expect(latestMonth([])).toBeNull();
+    expect(latestMonth(undefined)).toBeNull();
   });
 });
 
