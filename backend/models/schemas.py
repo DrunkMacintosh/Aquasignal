@@ -461,11 +461,27 @@ class AdvisorReportRequest(BaseModel):
     need: AdvisorNeed
     snapshot: AdvisorSnapshot
     answers: list[AdvisorAnswer] = Field(default_factory=list, max_length=MAX_ANSWERS)
+    site_summary: str = Field(
+        default="",
+        max_length=2000,
+        description=(
+            "Short, client-computed description of the user's site (see "
+            "lib/siteProfile.js) used to ground the report in their own figures. "
+            "Injected into the prompt; whitespace is collapsed at the boundary."
+        ),
+    )
 
     @field_validator("district_name")
     @classmethod
     def _clean_district(cls, value: str) -> str:
         return _sanitize_district_name(value)
+
+    @field_validator("site_summary")
+    @classmethod
+    def _clean_site_summary(cls, value: str) -> str:
+        # Collapse whitespace/newlines (defuses newline-based prompt injection),
+        # same posture as district_name; an empty summary stays empty.
+        return " ".join(value.split())
 
 
 class AdvisorActionPhase(BaseModel):

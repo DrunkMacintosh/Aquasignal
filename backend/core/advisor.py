@@ -366,30 +366,38 @@ def build_report_prompt(
     need: AdvisorNeed,
     snapshot: AdvisorSnapshot,
     answers: list[AdvisorAnswer],
+    site_summary: str = "",
 ) -> str:
-    answer_lines = (
-        "\n".join(f"- {a.question}: {a.answer}" for a in answers)
-        or "- (the user provided no answers)"
-    )
-    return (
-        _context_block(district_name, need, snapshot)
-        + "\nUSER'S ANSWERS:\n"
-        + answer_lines
-        + "\n\n"
+    parts = [_context_block(district_name, need, snapshot)]
+    if site_summary:
+        parts.append(
+            "\nUSER'S SITE PROFILE (figures calculated from their own inputs):\n"
+            f"- {site_summary}\n"
+        )
+    if answers:
+        answer_lines = "\n".join(f"- {a.question}: {a.answer}" for a in answers)
+        parts.append("\nUSER'S ANSWERS:\n" + answer_lines + "\n")
+    if not site_summary and not answers:
+        parts.append("\n(The user provided no extra site details.)\n")
+
+    parts.append(
+        "\n"
         + (
             "TASK: Write a DEEP, specific water-use plan for this goal and "
-            "location as a structured report. Ground every statement in the data "
-            "and the user's answers; be concrete and realistic, not generic. "
-            "Provide 3-5 priority_actions across the three timeframes, each scored "
-            "for impact and effort (1-5). You are advisory only -- include a "
-            "reminder to confirm critical decisions with local water authorities "
-            "(in risks or monitoring).\n"
+            "location as a structured report. Ground every statement in the data, "
+            "the user's site profile, and any answers; be concrete and realistic, "
+            "not generic -- reference the user's own figures where given. Provide "
+            "3-5 priority_actions across the three timeframes, each scored for "
+            "impact and effort (1-5). You are advisory only -- include a reminder "
+            "to confirm critical decisions with local water authorities (in risks "
+            "or monitoring).\n"
             + _blueprint_block(need)
             + "Return ONLY a JSON object of exactly this shape, no prose, no "
             "markdown:\n"
             f"{_REPORT_SCHEMA}"
         )
     )
+    return "".join(parts)
 
 
 # --------------------------------------------------------------------------- #
@@ -716,12 +724,15 @@ async def generate_report(
     answers: list[AdvisorAnswer],
     *,
     settings: Settings,
+    site_summary: str = "",
 ) -> dict:
     """Return a normalized structured report dict (ready for AdvisorReport)."""
     messages = [
         {
             "role": "system",
-            "content": build_report_prompt(district_name, need, snapshot, answers),
+            "content": build_report_prompt(
+                district_name, need, snapshot, answers, site_summary
+            ),
         },
         {"role": "user", "content": "Write the structured report now."},
     ]

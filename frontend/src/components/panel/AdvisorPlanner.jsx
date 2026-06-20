@@ -1,18 +1,21 @@
-// Deep-analysis water planner for one district: pick a goal -> answer a few
-// short model-generated questions -> get a structured report. No open chat.
-// State is component-local and resets when the panel switches district (parent
-// keys this by district name).
+// Deep-analysis water planner for one district: pick a goal -> fill a structured
+// site-profile form -> get a report grounded in BOTH the district snapshot and
+// figures calculated from the user's own inputs. No open chat. State is
+// component-local and resets when the panel switches district (parent keys this
+// by district name).
 import { useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { fetchAdvisorQuestions, fetchAdvisorReport } from '../../api/client.js';
+import { fetchAdvisorReport } from '../../api/client.js';
 import {
   useDistrictForecast,
   useDistrictHistory,
   useDistrictPermeability,
   useDistrictSatellite,
 } from '../../api/hooks.js';
-import { ADVISOR_NEEDS, buildSnapshot, needLabel } from '../../lib/advisor.js';
+import { ADVISOR_NEEDS, buildSnapshot } from '../../lib/advisor.js';
+import { computeSiteMetrics } from '../../lib/siteProfile.js';
 import ReportView from './ReportView.jsx';
+import SiteProfileForm from './SiteProfileForm.jsx';
 
 export default function AdvisorPlanner({ district }) {
   // Build the data snapshot from the (already-cached) district queries, so the
@@ -33,55 +36,36 @@ export default function AdvisorPlanner({ district }) {
   );
 
   const [need, setNeed] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({}); // keyed by question id
+  const [site, setSite] = useState(null); // computed site metrics (grounded)
   const [report, setReport] = useState(null);
 
-  const questionsM = useMutation({
-    mutationFn: (needId) =>
-      fetchAdvisorQuestions({ districtName: district, need: needId, snapshot }),
-    onSuccess: (data) => {
-      setQuestions(data.questions ?? []);
-      setAnswers({});
-    },
-  });
-
   const reportM = useMutation({
-    mutationFn: () =>
-      fetchAdvisorReport({
-        districtName: district,
-        need,
-        snapshot,
-        answers: questions
-          .map((q) => ({ question: q.question, answer: (answers[q.id] ?? '').trim() }))
-          .filter((a) => a.answer),
-      }),
+    mutationFn: ({ siteSummary }) =>
+      fetchAdvisorReport({ districtName: district, need, snapshot, siteSummary }),
     onSuccess: (data) => setReport(data.report),
   });
 
-  function pickNeed(needId) {
-    setNeed(needId);
-    setReport(null);
-    questionsM.mutate(needId);
+  function handleSubmit(inputs) {
+    const computed = computeSiteMetrics(need, inputs, snapshot);
+    setSite(computed);
+    reportM.mutate({ siteSummary: computed?.summaryForAi ?? '' });
   }
 
   function reset() {
     setNeed(null);
-    setQuestions([]);
-    setAnswers({});
+    setSite(null);
     setReport(null);
-    questionsM.reset();
     reportM.reset();
   }
 
   // Step: goal picker
-  if (!need) return <NeedPicker district={district} onPick={pickNeed} />;
+  if (!need) return <NeedPicker district={district} onPick={setNeed} />;
 
   // Step: finished report
   if (report) {
     return (
       <div className="space-y-2">
-        <ReportView report={report} need={need} district={district} snapshot={snapshot} />
+        <ReportView report={report} need={need} district={district} snapshot={snapshot} site={site} />
         <button
           type="button"
           onClick={reset}
@@ -93,72 +77,16 @@ export default function AdvisorPlanner({ district }) {
     );
   }
 
-  // Step: questions (loading / form / generating report)
+  // Step: site-profile form (loading report on submit)
   return (
-    <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">
-      <p className="text-sm font-semibold">
-        {needLabel(need)} · {district}
-      </p>
-
-      {questionsM.isPending && (
-        <p role="status" className="mt-2 flex items-center gap-1.5 text-xs italic text-ink-soft">
-          Preparing a few questions <LoadingDots />
-        </p>
-      )}
-      {questionsM.isError && (
-        <ErrorRetry error={questionsM.error} onRetry={() => questionsM.mutate(need)} />
-      )}
-
-      {questions.length > 0 && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!reportM.isPending) reportM.mutate();
-          }}
-          className="mt-3 space-y-3"
-        >
-          {questions.map((q) => (
-            <div key={q.id}>
-              <label htmlFor={`adv-${q.id}`} className="block text-sm font-medium">
-                {q.question}
-              </label>
-              <input
-                id={`adv-${q.id}`}
-                value={answers[q.id] ?? ''}
-                placeholder={q.hint || ''}
-                disabled={reportM.isPending}
-                onChange={(event) =>
-                  setAnswers((prev) => ({ ...prev, [q.id]: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-ink/15 bg-surface px-3 py-2 text-sm focus-visible:outline-water disabled:opacity-50"
-              />
-            </div>
-          ))}
-
-          {reportM.isError && <ErrorRetry error={reportM.error} inline />}
-
-          <div className="flex items-center gap-3">
-            <button type="submit" disabled={reportM.isPending} className="btn-primary !py-2 text-sm">
-              {reportM.isPending ? (
-                <span className="flex items-center gap-1.5">
-                  Analyzing <LoadingDots />
-                </span>
-              ) : (
-                'Generate report'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={reset}
-              className="text-xs font-semibold text-ink-soft hover:text-ink"
-            >
-              Cancel
-            </button>
-          </div>
-          <p className="text-xs text-ink-soft">Answer what you can — leave blanks if unsure.</p>
-        </form>
-      )}
-    </div>
+    <SiteProfileForm
+      need={need}
+      district={district}
+      isSubmitting={reportM.isPending}
+      error={reportM.isError ? reportM.error : null}
+      onSubmit={handleSubmit}
+      onCancel={reset}
+    />
   );
 }
 
@@ -168,7 +96,7 @@ function NeedPicker({ district, onPick }) {
       <p className="text-sm font-semibold">Plan your water use with AI</p>
       <p className="mt-1 text-xs text-ink-soft">
         Pick a goal. The advisor reviews {district}'s risk, forecast, and recharge data, asks a
-        few short questions, then writes a deep-analysis report.
+        few short questions about your site, then writes a deep-analysis report.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {ADVISOR_NEEDS.map((option) => (
@@ -183,41 +111,6 @@ function NeedPicker({ district, onPick }) {
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-// Three dots that bounce in sequence — the "AI is working" indicator. Inherits
-// the surrounding text colour via bg-current; staggered delays make it run.
-function LoadingDots() {
-  return (
-    <span className="inline-flex items-center gap-1" aria-hidden="true">
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce" />
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce [animation-delay:0.15s]" />
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-dot-bounce [animation-delay:0.3s]" />
-    </span>
-  );
-}
-
-function ErrorRetry({ error, onRetry, inline = false }) {
-  const busy = error?.response?.status === 429;
-  const message = busy
-    ? 'The advisor is busy right now (high demand). Wait a moment and try again.'
-    : 'The advisor is unavailable right now. Please try again.';
-  return (
-    <div className={inline ? '' : 'mt-2'}>
-      <p role="alert" className="text-xs font-medium text-risk-critical">
-        {message}
-      </p>
-      {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-1 text-xs font-semibold text-water hover:underline"
-        >
-          Retry
-        </button>
-      )}
     </div>
   );
 }
