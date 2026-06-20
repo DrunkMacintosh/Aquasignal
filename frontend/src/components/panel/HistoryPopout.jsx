@@ -23,7 +23,7 @@ export default function HistoryPopout({ district, onClose }) {
             Risk history
           </h2>
           <p className="microlabel mt-1">
-            {district} · Past 2 years · observed
+            {district} · Full history · observed
           </p>
         </div>
         <button

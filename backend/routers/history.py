@@ -1,8 +1,9 @@
 """Observed risk history as JSON: per cell and area-weighted per district.
 
 Replaces the dashboard's workaround of parsing the CSV export for its
-sparklines. Window matches the CSV export (EXPORT_HISTORY_MONTHS up to the
-latest scored month).
+sparklines. Returns the full observed record (bounded by HISTORY_WINDOW_MONTHS)
+up to the latest scored month; the dashboard widens its axis to span whatever
+comes back.
 """
 
 from datetime import date
@@ -21,7 +22,7 @@ from core.queries import (
     latest_observed_month,
 )
 from core.ratelimit import READ_RATE_LIMIT, limiter
-from core.scoring import EXPORT_HISTORY_MONTHS, risk_level
+from core.scoring import HISTORY_WINDOW_MONTHS, risk_level
 from models.schemas import CellHistoryResponse, DistrictHistoryResponse, HistoryPoint
 
 router = APIRouter(prefix="/history", tags=["history"])
@@ -31,7 +32,7 @@ async def _history_cutoff(db: AsyncSession) -> date | None:
     latest = await latest_observed_month(db)
     if latest is None:
         return None
-    return latest - relativedelta(months=EXPORT_HISTORY_MONTHS - 1)
+    return latest - relativedelta(months=HISTORY_WINDOW_MONTHS - 1)
 
 
 def _points(rows) -> list[HistoryPoint]:
@@ -50,8 +51,8 @@ def _points(rows) -> list[HistoryPoint]:
     response_model=DistrictHistoryResponse,
     summary="Observed district risk history (area-weighted)",
     description=(
-        "Monthly area-weighted mean risk for the named district over the last "
-        f"{EXPORT_HISTORY_MONTHS} scored months, ascending."
+        "Monthly area-weighted mean risk for the named district across its full "
+        f"observed record (up to {HISTORY_WINDOW_MONTHS} months), ascending."
     ),
 )
 @limiter.limit(READ_RATE_LIMIT)
@@ -74,8 +75,8 @@ async def get_district_history(
     response_model=CellHistoryResponse,
     summary="Observed risk history for one grid cell",
     description=(
-        "Monthly observed risk for the given cell code over the last "
-        f"{EXPORT_HISTORY_MONTHS} scored months, ascending."
+        "Monthly observed risk for the given cell code across its full observed "
+        f"record (up to {HISTORY_WINDOW_MONTHS} months), ascending."
     ),
 )
 @limiter.limit(READ_RATE_LIMIT)

@@ -13,7 +13,11 @@ TREND_WINDOW_MONTHS = 3
 TREND_DELTA_POINTS = 5.0
 
 FORECAST_HORIZON_MONTHS = 6
-EXPORT_HISTORY_MONTHS = 24
+EXPORT_HISTORY_MONTHS = 24  # supervisor CSV/PDF export window (kept concise)
+# History charts show the full observed record — the dashboard widens its axis to
+# whatever the API returns. This bound just caps the query for safety; 20 years
+# comfortably covers the ~11 years of satellite data with headroom.
+HISTORY_WINDOW_MONTHS = 240
 ALERT_HISTORY_LIMIT = 30
 
 

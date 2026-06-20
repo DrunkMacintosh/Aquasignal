@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
   currentMonthKey,
+  earliestMonth,
   historyTickInterval,
   historyWindow,
   latestMonth,
+  monthsBetween,
   monthSequence,
 } from './chart.js';
 
@@ -57,6 +59,35 @@ describe('latestMonth', () => {
   test('returns null when there are no points', () => {
     expect(latestMonth([])).toBeNull();
     expect(latestMonth(undefined)).toBeNull();
+  });
+});
+
+describe('earliestMonth', () => {
+  test('returns the oldest month regardless of input order', () => {
+    expect(
+      earliestMonth([{ month: '2024-06' }, { month: '2015-01' }, { month: '2026-05' }]),
+    ).toBe('2015-01');
+  });
+
+  test('returns null when there are no points', () => {
+    expect(earliestMonth([])).toBeNull();
+    expect(earliestMonth(undefined)).toBeNull();
+  });
+});
+
+describe('monthsBetween', () => {
+  test('counts whole months across years', () => {
+    expect(monthsBetween('2015-01', '2026-05')).toBe(136);
+    expect(monthsBetween('2024-06', '2026-05')).toBe(23);
+  });
+
+  test('is 0 for the same month and negative when reversed', () => {
+    expect(monthsBetween('2025-03', '2025-03')).toBe(0);
+    expect(monthsBetween('2025-05', '2025-03')).toBe(-2);
+  });
+
+  test('returns 0 for malformed input', () => {
+    expect(monthsBetween('', '2026-05')).toBe(0);
   });
 });
 

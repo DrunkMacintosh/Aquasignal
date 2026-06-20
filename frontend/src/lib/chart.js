@@ -35,6 +35,24 @@ export function latestMonth(points) {
   return points.reduce((max, p) => (p.month > max ? p.month : max), points[0].month);
 }
 
+/** The earliest 'YYYY-MM' present in `points`, or null when there are none. */
+export function earliestMonth(points) {
+  if (!points?.length) return null;
+  return points.reduce((min, p) => (p.month < min ? p.month : min), points[0].month);
+}
+
+/**
+ * Whole months from `startMonth` to `endMonth` (both 'YYYY-MM'); 0 when equal,
+ * negative if start is after end. Used to size the history window to the full
+ * span of available data.
+ */
+export function monthsBetween(startMonth, endMonth) {
+  const [sy, sm] = String(startMonth ?? '').split('-').map(Number);
+  const [ey, em] = String(endMonth ?? '').split('-').map(Number);
+  if (!sy || !sm || !ey || !em) return 0;
+  return (ey - sy) * 12 + (em - sm);
+}
+
 /**
  * Ascending list of 'YYYY-MM' keys for a continuous window ending at `endMonth`
  * and reaching `monthsBack` months before it — `monthsBack + 1` entries,
