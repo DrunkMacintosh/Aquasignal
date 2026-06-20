@@ -81,7 +81,7 @@ export default function AdvisorPlanner({ district }) {
   if (report) {
     return (
       <div className="space-y-2">
-        <ReportView report={report} need={need} district={district} />
+        <ReportView report={report} need={need} district={district} snapshot={snapshot} />
         <button
           type="button"
           onClick={reset}

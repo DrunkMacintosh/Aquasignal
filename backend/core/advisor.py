@@ -39,9 +39,11 @@ _TIMEOUT_SECONDS = 60.0
 # total stays well inside the client's request timeout.
 _RETRY_BACKOFF_SECONDS = (1.0, 2.0)
 
-# Bounds: questions are tiny, the report is longer but still capped.
+# Bounds: questions are tiny, the report is longer but still capped. The report
+# now carries structured visual blocks (metrics/allocation/drivers/actions) on
+# top of the prose, so it needs more headroom than the text-only version did.
 _QUESTIONS_MAX_TOKENS = 600
-_REPORT_MAX_TOKENS = 1600
+_REPORT_MAX_TOKENS = 2400
 
 # Intake size + answer caps mirror the schema; keep prompts (and cost) bounded.
 MIN_QUESTIONS = 3
@@ -70,6 +72,90 @@ NEED_GUIDANCE: dict[AdvisorNeed, tuple[str, str]] = {
         "Focus on process water demand, recycling/reuse, and sustainable "
         "abstraction limits given the recharge and subsidence signals.",
     ),
+}
+
+# Per-need blueprint for the structured visual blocks (Option C). These fixed
+# labels are injected into the report prompt so the model fills VALUES into a
+# known, per-topic taxonomy rather than inventing categories -- far more
+# reliable JSON on a free model, while each need still reads bespoke. Keys mirror
+# reportManifest.js on the frontend.
+NEED_BLUEPRINT: dict[AdvisorNeed, dict[str, list[str]]] = {
+    "water_sustainability": {
+        "allocation": [
+            "Sustainable abstraction",
+            "Aquifer recovery reserve",
+            "System / conveyance losses",
+            "Contingency buffer",
+        ],
+        "risk_drivers": [
+            "Abstraction above recharge",
+            "Declining recharge",
+            "Dry-season demand peak",
+            "Storage depletion (GRACE)",
+        ],
+        "metrics": [
+            "Well-failure risk",
+            "Abstraction vs recharge balance",
+            "Groundwater storage trend",
+        ],
+    },
+    "agriculture": {
+        "allocation": [
+            "Crop irrigation",
+            "Soil-moisture buffer",
+            "Conveyance losses",
+            "Dry-season reserve",
+        ],
+        "risk_drivers": [
+            "Over-abstraction",
+            "Low recharge",
+            "Dry-season demand peak",
+            "Irrigation inefficiency",
+        ],
+        "metrics": [
+            "Well-failure risk",
+            "Irrigation efficiency",
+            "Seasonal demand cover",
+        ],
+    },
+    "urban_supply": {
+        "allocation": [
+            "Domestic demand",
+            "Public / municipal use",
+            "Leakage reduction",
+            "Emergency reserve",
+        ],
+        "risk_drivers": [
+            "Peak household demand",
+            "Network leakage",
+            "Low recharge",
+            "Source concentration",
+        ],
+        "metrics": [
+            "Well-failure risk",
+            "Non-revenue water",
+            "Storage cover (days)",
+        ],
+    },
+    "industrial": {
+        "allocation": [
+            "Process water",
+            "Cooling",
+            "Recovered / reused water",
+            "Contingency reserve",
+        ],
+        "risk_drivers": [
+            "Process abstraction",
+            "Limited reuse",
+            "Low recharge",
+            "Subsidence stress",
+        ],
+        "metrics": [
+            "Well-failure risk",
+            "Water reuse rate",
+            "Sustainable abstraction margin",
+        ],
+    },
 }
 
 # Static fallback questions per need, used when the model's question JSON can't
@@ -102,7 +188,9 @@ FALLBACK_QUESTIONS: dict[AdvisorNeed, list[dict[str, str]]] = {
 }
 
 # The exact report shape the model must return. Kept as a constant so the prompt
-# and the tests reference one source of truth.
+# and the tests reference one source of truth. The structured blocks
+# (metrics/allocation/risk_drivers/priority_actions) back the report's charts;
+# their per-need labels are supplied separately by _blueprint_block().
 _REPORT_SCHEMA = (
     "{\n"
     '  "headline": "one-line verdict, max 12 words",\n'
@@ -110,10 +198,19 @@ _REPORT_SCHEMA = (
     '  "situation_assessment": "2-4 sentences interpreting the data for this goal",\n'
     '  "your_context": "1-2 sentences summarising the user\'s situation",\n'
     '  "key_findings": ["3-5 short, data-grounded insights"],\n'
-    '  "action_plan": [\n'
-    '    {"timeframe": "Immediate (0-1 month)", "actions": ["..."]},\n'
-    '    {"timeframe": "Short-term (1-3 months)", "actions": ["..."]},\n'
-    '    {"timeframe": "Medium-term (3-6 months)", "actions": ["..."]}\n'
+    '  "metrics": [\n'
+    '    {"label": "<a METRICS label>", "value": 0, "target": 0, '
+    '"unit": "/100 | m3/mo | % | days", "direction": "lower_is_better | higher_is_better"}\n'
+    "  ],\n"
+    '  "allocation": [\n'
+    '    {"label": "<an ALLOCATION label>", "percent": 0}\n'
+    "  ],\n"
+    '  "risk_drivers": [\n'
+    '    {"label": "<a RISK_DRIVERS label>", "weight": 0}\n'
+    "  ],\n"
+    '  "priority_actions": [\n'
+    '    {"action": "one concrete step", "timeframe": "Immediate (0-1 month) | '
+    'Short-term (1-3 months) | Medium-term (3-6 months)", "impact": 3, "effort": 2}\n'
     "  ],\n"
     '  "risks": ["what could go wrong or what to watch"],\n'
     '  "monitoring": ["metrics to track and when to revisit"]\n'
@@ -244,6 +341,26 @@ def build_questions_prompt(
     )
 
 
+def _blueprint_block(need: AdvisorNeed) -> str:
+    """Per-need labels the model must reuse for the structured blocks, so the
+    JSON shape stays fixed while each report reads bespoke to the topic."""
+    bp = NEED_BLUEPRINT[need]
+    join = "; ".join
+    return (
+        "USE THESE EXACT LABELS for the structured blocks (fill each label with "
+        "values grounded in the data; you may add at most ONE extra item per "
+        "block if clearly relevant, and drop a label only if truly not "
+        "applicable):\n"
+        f"- METRICS labels: {join(bp['metrics'])}. "
+        "For each, give the current value and a realistic target in a sensible "
+        "unit; well-failure risk is on a 0-100 scale (lower is better).\n"
+        f"- ALLOCATION labels: {join(bp['allocation'])}. "
+        "Percent shares of total water use that should sum to about 100.\n"
+        f"- RISK_DRIVERS labels: {join(bp['risk_drivers'])}. "
+        "Weight each 0-100 by how much it drives well-failure risk here.\n"
+    )
+
+
 def build_report_prompt(
     district_name: str,
     need: AdvisorNeed,
@@ -262,10 +379,13 @@ def build_report_prompt(
         + (
             "TASK: Write a DEEP, specific water-use plan for this goal and "
             "location as a structured report. Ground every statement in the data "
-            "and the user's answers; be concrete and realistic, not generic. You "
-            "are advisory only -- include a reminder to confirm critical "
-            "decisions with local water authorities (in risks or monitoring).\n"
-            "Return ONLY a JSON object of exactly this shape, no prose, no "
+            "and the user's answers; be concrete and realistic, not generic. "
+            "Provide 3-5 priority_actions across the three timeframes, each scored "
+            "for impact and effort (1-5). You are advisory only -- include a "
+            "reminder to confirm critical decisions with local water authorities "
+            "(in risks or monitoring).\n"
+            + _blueprint_block(need)
+            + "Return ONLY a JSON object of exactly this shape, no prose, no "
             "markdown:\n"
             f"{_REPORT_SCHEMA}"
         )
@@ -412,6 +532,115 @@ def _as_phase_list(value) -> list[dict]:
     return phases
 
 
+def _as_number(value, *, lo: float | None = None, hi: float | None = None) -> float | None:
+    """Best-effort float from a model value ('42', '42%', '12 m3/mo' all work),
+    clamped to [lo, hi]. Returns None when there is no number to read."""
+    if isinstance(value, bool):  # bools are ints in Python; not a measurement
+        return None
+    if isinstance(value, (int, float)):
+        num = float(value)
+    elif isinstance(value, str):
+        match = re.search(r"-?\d+(?:\.\d+)?", value.replace(",", ""))
+        if not match:
+            return None
+        num = float(match.group())
+    else:
+        return None
+    if lo is not None:
+        num = max(lo, num)
+    if hi is not None:
+        num = min(hi, num)
+    return num
+
+
+def _as_score(value) -> int:
+    """A 0-5 impact/effort score (0 means 'unscored')."""
+    num = _as_number(value, lo=0, hi=5)
+    return int(round(num)) if num is not None else 0
+
+
+def _labelled_items(value, builder, *, max_items: int) -> list[dict]:
+    """Shared skeleton for the structured blocks: keep dict items with a
+    non-empty label, build each via `builder`, cap the count."""
+    if not isinstance(value, list):
+        return []
+    out: list[dict] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or "").strip()[:80]
+        if not label:
+            continue
+        out.append(builder(label, item))
+        if len(out) >= max_items:
+            break
+    return out
+
+
+def _as_metric_list(value) -> list[dict]:
+    def build(label: str, item: dict) -> dict:
+        direction = str(item.get("direction") or "").strip().lower()
+        if direction not in ("lower_is_better", "higher_is_better"):
+            direction = "lower_is_better"
+        return {
+            "label": label,
+            "value": _as_number(item.get("value")),
+            "target": _as_number(item.get("target")),
+            "unit": str(item.get("unit") or "").strip()[:16],
+            "direction": direction,
+            "note": str(item.get("note") or "").strip()[:200],
+        }
+
+    return _labelled_items(value, build, max_items=6)
+
+
+def _as_allocation_list(value) -> list[dict]:
+    def build(label: str, item: dict) -> dict:
+        percent = _as_number(item.get("percent"), lo=0, hi=100)
+        return {
+            "label": label,
+            "percent": percent if percent is not None else 0.0,
+            "note": str(item.get("note") or "").strip()[:200],
+        }
+
+    return _labelled_items(value, build, max_items=8)
+
+
+def _as_driver_list(value) -> list[dict]:
+    def build(label: str, item: dict) -> dict:
+        weight = _as_number(item.get("weight"), lo=0, hi=100)
+        return {
+            "label": label,
+            "weight": weight if weight is not None else 0.0,
+            "note": str(item.get("note") or "").strip()[:200],
+        }
+
+    return _labelled_items(value, build, max_items=8)
+
+
+def _as_priority_actions(value) -> list[dict]:
+    if not isinstance(value, list):
+        return []
+    out: list[dict] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        action = str(item.get("action") or "").strip()[:300]
+        if not action:
+            continue
+        out.append(
+            {
+                "action": action,
+                "timeframe": str(item.get("timeframe") or "").strip()[:80],
+                "impact": _as_score(item.get("impact")),
+                "effort": _as_score(item.get("effort")),
+            }
+        )
+        if len(out) >= 8:
+            break
+    return out
+
+
 def _normalize_report(data: dict) -> dict:
     """Coerce a parsed report dict into the AdvisorReport shape so a
     slightly-off model response never fails validation."""
@@ -424,6 +653,10 @@ def _normalize_report(data: dict) -> dict:
         "action_plan": _as_phase_list(data.get("action_plan")),
         "risks": _as_str_list(data.get("risks")),
         "monitoring": _as_str_list(data.get("monitoring")),
+        "metrics": _as_metric_list(data.get("metrics")),
+        "allocation": _as_allocation_list(data.get("allocation")),
+        "risk_drivers": _as_driver_list(data.get("risk_drivers")),
+        "priority_actions": _as_priority_actions(data.get("priority_actions")),
     }
 
 

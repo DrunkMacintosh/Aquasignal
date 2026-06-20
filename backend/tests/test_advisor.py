@@ -84,12 +84,28 @@ def test_report_prompt_includes_answers_and_full_schema():
     for key in (
         "headline",
         "situation_assessment",
-        "action_plan",
         "key_findings",
+        "metrics",
+        "allocation",
+        "risk_drivers",
+        "priority_actions",
         "risks",
         "monitoring",
     ):
         assert key in prompt
+
+
+def test_report_prompt_injects_per_need_blueprint_labels():
+    # Option C: the per-need taxonomy labels are baked into the prompt so the
+    # model fills a known shape. Agriculture must read bespoke to farming.
+    prompt = build_report_prompt("Long An", "agriculture", _snapshot(), [])
+    assert "Crop irrigation" in prompt  # allocation label
+    assert "Irrigation efficiency" in prompt  # metric label
+    assert "Over-abstraction" in prompt  # risk-driver label
+    # A different need pulls different labels.
+    industrial = build_report_prompt("Long An", "industrial", _snapshot(), [])
+    assert "Cooling" in industrial
+    assert "Crop irrigation" not in industrial
 
 
 def test_context_handles_missing_data():
@@ -127,6 +143,59 @@ def test_normalize_report_coerces_types():
     # Missing fields default cleanly.
     assert report["risks"] == []
     assert report["outlook"] == ""
+    # Structured visual blocks also default to empty lists.
+    assert report["metrics"] == []
+    assert report["allocation"] == []
+    assert report["risk_drivers"] == []
+    assert report["priority_actions"] == []
+
+
+def test_normalize_report_coerces_structured_blocks():
+    report = _normalize_report(
+        {
+            "metrics": [
+                # "62%" string + out-of-range target get parsed and clamped;
+                # an unknown direction falls back to lower_is_better.
+                {"label": "Well-failure risk", "value": "62%", "target": 150,
+                 "unit": "/100", "direction": "sideways"},
+                {"value": 1},  # no label -> dropped
+            ],
+            "allocation": [
+                {"label": "Crop irrigation", "percent": "70"},
+                {"label": "Reserve", "percent": -5},  # clamped to 0
+            ],
+            "risk_drivers": [{"label": "Over-abstraction", "weight": 200}],  # clamped to 100
+            "priority_actions": [
+                {"action": "Install drip lines", "timeframe": "Immediate (0-1 month)",
+                 "impact": 9, "effort": "2"},
+                {"timeframe": "later"},  # no action -> dropped
+            ],
+        }
+    )
+    metrics = report["metrics"]
+    assert len(metrics) == 1
+    assert metrics[0]["value"] == 62.0
+    assert metrics[0]["target"] == 150.0  # metric targets are uncapped (unit-dependent)
+    assert metrics[0]["direction"] == "lower_is_better"
+
+    alloc = report["allocation"]
+    assert [a["percent"] for a in alloc] == [70.0, 0.0]
+
+    assert report["risk_drivers"][0]["weight"] == 100.0
+
+    actions = report["priority_actions"]
+    assert len(actions) == 1
+    assert actions[0]["impact"] == 5  # clamped 9 -> 5
+    assert actions[0]["effort"] == 2
+
+    # The seam that matters: the normalized dict must validate as AdvisorReport
+    # with the structured blocks populated (catches any field-name drift between
+    # the normalizer and the schema).
+    model = AdvisorReport(**report)
+    assert model.metrics[0].label == "Well-failure risk"
+    assert model.allocation[0].percent == 70.0
+    assert model.risk_drivers[0].weight == 100.0
+    assert model.priority_actions[0].impact == 5
 
 
 # --------------------------------------------------------------------------- #
