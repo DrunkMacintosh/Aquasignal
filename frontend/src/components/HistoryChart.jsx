@@ -10,7 +10,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { currentMonthKey, historyTickInterval, historyWindow } from '../lib/chart.js';
+import {
+  currentMonthKey,
+  historyTickInterval,
+  historyWindow,
+  latestMonth,
+} from '../lib/chart.js';
 import {
   CRITICAL_THRESHOLD,
   HIGH_THRESHOLD,
@@ -20,10 +25,11 @@ import {
 } from '../lib/risk.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
-// The window runs two years (24 months) back through the current calendar
-// month, inclusive — 25 monthly slots — so the axis always reads "current month
-// two years ago -> current month" regardless of which months were scored.
-const HISTORY_MONTHS_BACK = 24;
+// The window spans two years — 24 monthly slots — ending at the anchor month:
+// 23 months back plus the anchor month, inclusive. Matching the API's
+// EXPORT_HISTORY_MONTHS (24) window means the line fills the axis edge to edge
+// instead of leaving a stray empty slot.
+const HISTORY_MONTHS_BACK = 23;
 
 export default function HistoryChart({ points, isLoading }) {
   if (isLoading) return <ChartSkeleton height={300} />;
@@ -35,11 +41,13 @@ export default function HistoryChart({ points, isLoading }) {
     );
   }
 
-  // Pin the axis to a fixed [current month - 2 years ... current month] window
-  // and left-join the observations onto it; unscored months come back null and
-  // render as gaps instead of shrinking the window to wherever data happens to
-  // start and end.
-  const data = historyWindow(points, currentMonthKey(), HISTORY_MONTHS_BACK).map((slot) => ({
+  // Anchor the 2-year window to the latest *scored* month (observed data lags
+  // the calendar, so the wall clock would push the series out of view); fall
+  // back to the current month only when there's no data at all. Left-join the
+  // observations onto the fixed window so unscored months render as gaps rather
+  // than shrinking the axis to wherever the data happens to fall.
+  const anchorMonth = latestMonth(points) ?? currentMonthKey();
+  const data = historyWindow(points, anchorMonth, HISTORY_MONTHS_BACK).map((slot) => ({
     month: slot.month,
     label: shortMonth(slot.month),
     risk: slot.risk,
@@ -91,7 +99,9 @@ export default function HistoryChart({ points, isLoading }) {
             // Leave unscored months as gaps rather than drawing a straight line
             // across them — a bridged line would imply data we don't have.
             connectNulls={false}
-            dot={false}
+            // Small dots so a single isolated month (a gap on both sides draws
+            // no line segment) is still visible instead of vanishing.
+            dot={{ r: 2, fill: '#1C2B33', strokeWidth: 0 }}
             activeDot={{ r: 4, fill: '#1C2B33', strokeWidth: 0 }}
             isAnimationActive={false}
             name="Observed risk"
@@ -99,8 +109,8 @@ export default function HistoryChart({ points, isLoading }) {
         </LineChart>
       </ResponsiveContainer>
       <figcaption className="mt-1 text-[11px] text-ink-soft">
-        Observed monthly risk, {formatMonth(firstMonth)} – {formatMonth(lastMonth)}. Gaps are
-        months not yet scored; dashed lines mark the High and Critical thresholds.
+        Observed monthly risk, {formatMonth(firstMonth)} – {formatMonth(lastMonth)}. Any gaps
+        mark unscored months; dashed lines mark the High and Critical thresholds.
       </figcaption>
     </figure>
   );
