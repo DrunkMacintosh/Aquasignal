@@ -40,15 +40,15 @@ export default function AdvisorPlanner({ district }) {
   const [report, setReport] = useState(null);
 
   const reportM = useMutation({
-    mutationFn: ({ siteSummary }) =>
-      fetchAdvisorReport({ districtName: district, need, snapshot, siteSummary }),
+    mutationFn: ({ siteSummary, notes }) =>
+      fetchAdvisorReport({ districtName: district, need, snapshot, siteSummary, notes }),
     onSuccess: (data) => setReport(data.report),
   });
 
-  function handleSubmit(inputs) {
+  function handleSubmit(inputs, notes) {
     const computed = computeSiteMetrics(need, inputs, snapshot);
     setSite(computed);
-    reportM.mutate({ siteSummary: computed?.summaryForAi ?? '' });
+    reportM.mutate({ siteSummary: computed?.summaryForAi ?? '', notes });
   }
 
   function reset() {

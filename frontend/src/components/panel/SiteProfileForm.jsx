@@ -9,6 +9,7 @@ import { needLabel } from '../../lib/advisor.js';
 export default function SiteProfileForm({ need, district, isSubmitting, error, onSubmit, onCancel }) {
   const fields = siteFieldsFor(need);
   const [values, setValues] = useState({});
+  const [notes, setNotes] = useState(''); // free-text "anything else" for this topic
   const ready = hasRequiredSiteInputs(need, values);
 
   function setField(id, value) {
@@ -28,13 +29,30 @@ export default function SiteProfileForm({ need, district, isSubmitting, error, o
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          if (ready && !isSubmitting) onSubmit(values);
+          if (ready && !isSubmitting) onSubmit(values, notes);
         }}
         className="mt-3 space-y-3"
       >
         {fields.map((field) => (
           <Field key={field.id} field={field} value={values[field.id] ?? ''} onChange={setField} disabled={isSubmitting} />
         ))}
+
+        <div>
+          <label htmlFor="site-notes" className="block text-sm font-medium">
+            Other information you want to add
+            <span className="ml-1 text-xs font-normal text-ink-faint">(optional)</span>
+          </label>
+          <textarea
+            id="site-notes"
+            value={notes}
+            maxLength={1000}
+            rows={3}
+            placeholder="Anything important the questions above didn't cover — e.g. budget limits, recent well changes, local constraints."
+            disabled={isSubmitting}
+            onChange={(event) => setNotes(event.target.value)}
+            className="mt-1 w-full resize-y rounded-lg border border-ink/15 bg-surface px-3 py-2 text-sm focus-visible:outline-water disabled:opacity-50"
+          />
+        </div>
 
         {error && (
           <p role="alert" className="text-xs font-medium text-risk-critical">

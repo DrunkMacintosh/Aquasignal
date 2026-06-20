@@ -175,12 +175,18 @@ export async function fetchAdvisorQuestions({ districtName, need, snapshot }) {
 /**
  * Step 2: the deep-analysis structured report. `siteSummary` is a short,
  * client-computed description of the user's site (lib/siteProfile.js) used to
- * ground the report in their own figures; the server injects it into the prompt.
+ * ground the report in their own figures; `notes` is the user's free-text
+ * "other information" for this topic. Both are injected into the prompt server-
+ * side (notes ride the existing `answers` channel).
  */
-export async function fetchAdvisorReport({ districtName, need, snapshot, siteSummary = '' }) {
+export async function fetchAdvisorReport({ districtName, need, snapshot, siteSummary = '', notes = '' }) {
+  const trimmedNotes = (notes ?? '').trim();
+  const answers = trimmedNotes
+    ? [{ question: 'Other information the user added', answer: trimmedNotes }]
+    : [];
   const { data } = await api.post(
     '/advisor/report',
-    { district_name: districtName, need, snapshot, site_summary: siteSummary },
+    { district_name: districtName, need, snapshot, site_summary: siteSummary, answers },
     { timeout: ADVISOR_TIMEOUT_MS },
   );
   return data; // { report: {...}, model }
