@@ -461,11 +461,27 @@ class AdvisorReportRequest(BaseModel):
     need: AdvisorNeed
     snapshot: AdvisorSnapshot
     answers: list[AdvisorAnswer] = Field(default_factory=list, max_length=MAX_ANSWERS)
+    site_summary: str = Field(
+        default="",
+        max_length=2000,
+        description=(
+            "Short, client-computed description of the user's site (see "
+            "lib/siteProfile.js) used to ground the report in their own figures. "
+            "Injected into the prompt; whitespace is collapsed at the boundary."
+        ),
+    )
 
     @field_validator("district_name")
     @classmethod
     def _clean_district(cls, value: str) -> str:
         return _sanitize_district_name(value)
+
+    @field_validator("site_summary")
+    @classmethod
+    def _clean_site_summary(cls, value: str) -> str:
+        # Collapse whitespace/newlines (defuses newline-based prompt injection),
+        # same posture as district_name; an empty summary stays empty.
+        return " ".join(value.split())
 
 
 class AdvisorActionPhase(BaseModel):
@@ -473,9 +489,56 @@ class AdvisorActionPhase(BaseModel):
     actions: list[str] = Field(default_factory=list)
 
 
+# --- Structured visual blocks (drive the report's charts) ------------------ #
+# Each is fully defaulted and range-bounded by the normalizer in core/advisor.py
+# so a free-tier model returning slightly-off numbers still renders a chart.
+
+MetricDirection = Literal["lower_is_better", "higher_is_better"]
+
+
+class AdvisorMetric(BaseModel):
+    """A KPI gauge: where a metric stands now vs. the recommended target."""
+
+    label: str = ""
+    value: float | None = Field(default=None, description="Current value, metric's own unit.")
+    target: float | None = Field(default=None, description="Recommended target value.")
+    unit: str = Field(default="", description="e.g. '/100', 'm3/mo', '%'.")
+    direction: MetricDirection = Field(
+        default="lower_is_better",
+        description="Whether a lower or higher value is the healthier outcome.",
+    )
+    note: str = ""
+
+
+class AdvisorAllocationSlice(BaseModel):
+    """One slice of the recommended water-budget donut (percent of total use)."""
+
+    label: str = ""
+    percent: float = Field(default=0, description="Share of total use (0-100); normalized client-side.")
+    note: str = ""
+
+
+class AdvisorRiskDriver(BaseModel):
+    """One factor driving well-failure risk at this location, weighted 0-100."""
+
+    label: str = ""
+    weight: float = Field(default=0, ge=0, le=100, description="Relative contribution (0-100).")
+    note: str = ""
+
+
+class AdvisorPriorityAction(BaseModel):
+    """A recommended action scored on impact and effort (1-5) for prioritization."""
+
+    action: str = ""
+    timeframe: str = Field(default="", description="e.g. 'Immediate (0-1 month)'.")
+    impact: int = Field(default=0, ge=0, le=5, description="Expected benefit, 1 (low) - 5 (high).")
+    effort: int = Field(default=0, ge=0, le=5, description="Effort/cost, 1 (low) - 5 (high).")
+
+
 class AdvisorReport(BaseModel):
     """The structured report. Every field is defaulted so a partial (or
-    coerced) model response still validates and renders."""
+    coerced) model response still validates and renders. The list[str] / phase
+    fields carry the narrative; the structured blocks below drive the charts."""
 
     headline: str = ""
     outlook: str = Field(default="", description="Short outlook tag.")
@@ -485,6 +548,11 @@ class AdvisorReport(BaseModel):
     action_plan: list[AdvisorActionPhase] = Field(default_factory=list)
     risks: list[str] = Field(default_factory=list)
     monitoring: list[str] = Field(default_factory=list)
+    # Structured visual blocks (Option C: per-need tailored, chart-backed).
+    metrics: list[AdvisorMetric] = Field(default_factory=list)
+    allocation: list[AdvisorAllocationSlice] = Field(default_factory=list)
+    risk_drivers: list[AdvisorRiskDriver] = Field(default_factory=list)
+    priority_actions: list[AdvisorPriorityAction] = Field(default_factory=list)
 
 
 class AdvisorReportResponse(BaseModel):

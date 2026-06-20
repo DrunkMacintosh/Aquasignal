@@ -134,7 +134,12 @@ async def post_advisor_report(
     settings = _require_enabled()
     report = await _run(
         generate_report(
-            body.district_name, body.need, body.snapshot, body.answers, settings=settings
+            body.district_name,
+            body.need,
+            body.snapshot,
+            body.answers,
+            settings=settings,
+            site_summary=body.site_summary,
         ),
         district=body.district_name,
     )
