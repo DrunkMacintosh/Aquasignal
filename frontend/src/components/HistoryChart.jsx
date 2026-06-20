@@ -12,9 +12,11 @@ import {
 } from 'recharts';
 import {
   currentMonthKey,
+  earliestMonth,
   historyTickInterval,
   historyWindow,
   latestMonth,
+  monthsBetween,
 } from '../lib/chart.js';
 import {
   CRITICAL_THRESHOLD,
@@ -25,11 +27,10 @@ import {
 } from '../lib/risk.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
-// The window spans two years — 24 monthly slots — ending at the anchor month:
-// 23 months back plus the anchor month, inclusive. Matching the API's
-// EXPORT_HISTORY_MONTHS (24) window means the line fills the axis edge to edge
-// instead of leaving a stray empty slot.
-const HISTORY_MONTHS_BACK = 23;
+// Above this many actual observations the dots crowd the line, so we drop them
+// and let the line carry the shape; at or below it (a few years or a lone
+// month) the dots aid reading and keep an isolated point from vanishing.
+const MAX_MONTHS_WITH_DOTS = 36;
 
 export default function HistoryChart({ points, isLoading }) {
   if (isLoading) return <ChartSkeleton height={300} />;
@@ -41,19 +42,21 @@ export default function HistoryChart({ points, isLoading }) {
     );
   }
 
-  // Anchor the 2-year window to the latest *scored* month (observed data lags
-  // the calendar, so the wall clock would push the series out of view); fall
-  // back to the current month only when there's no data at all. Left-join the
-  // observations onto the fixed window so unscored months render as gaps rather
-  // than shrinking the axis to wherever the data happens to fall.
-  const anchorMonth = latestMonth(points) ?? currentMonthKey();
-  const data = historyWindow(points, anchorMonth, HISTORY_MONTHS_BACK).map((slot) => ({
+  // Span the full available record: from the earliest scored month through the
+  // latest, inclusive. Left-join the observations onto that continuous window so
+  // unscored months (e.g. the 2017-18 GRACE satellite gap) render as breaks in
+  // the line rather than being silently collapsed.
+  const lastDataMonth = latestMonth(points) ?? currentMonthKey();
+  const firstDataMonth = earliestMonth(points) ?? lastDataMonth;
+  const span = monthsBetween(firstDataMonth, lastDataMonth);
+  const data = historyWindow(points, lastDataMonth, span).map((slot) => ({
     month: slot.month,
     label: shortMonth(slot.month),
     risk: slot.risk,
   }));
   const firstMonth = data[0]?.month;
   const lastMonth = data[data.length - 1]?.month;
+  const showDots = data.filter((slot) => slot.risk != null).length <= MAX_MONTHS_WITH_DOTS;
 
   return (
     <figure
@@ -100,8 +103,9 @@ export default function HistoryChart({ points, isLoading }) {
             // across them — a bridged line would imply data we don't have.
             connectNulls={false}
             // Small dots so a single isolated month (a gap on both sides draws
-            // no line segment) is still visible instead of vanishing.
-            dot={{ r: 2, fill: '#1C2B33', strokeWidth: 0 }}
+            // no line segment) is still visible instead of vanishing — but only
+            // for shorter spans, where they don't crowd the line.
+            dot={showDots ? { r: 2, fill: '#1C2B33', strokeWidth: 0 } : false}
             activeDot={{ r: 4, fill: '#1C2B33', strokeWidth: 0 }}
             isAnimationActive={false}
             name="Observed risk"
