@@ -32,7 +32,7 @@ import { ChartSkeleton } from './Skeletons.jsx';
 // month) the dots aid reading and keep an isolated point from vanishing.
 const MAX_MONTHS_WITH_DOTS = 36;
 
-export default function HistoryChart({ points, isLoading }) {
+export default function HistoryChart({ points, isLoading, onSelectMonth }) {
   if (isLoading) return <ChartSkeleton height={300} />;
   if (!points?.length) {
     return (
@@ -62,8 +62,25 @@ export default function HistoryChart({ points, isLoading }) {
     <figure
       aria-label={`Observed risk history from ${formatMonth(firstMonth)} to ${formatMonth(lastMonth)}`}
     >
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data} margin={{ top: 8, right: 10, bottom: 0, left: -22 }}>
+      <ResponsiveContainer
+        width="100%"
+        height={300}
+        className={onSelectMonth ? 'cursor-pointer' : undefined}
+      >
+        <LineChart
+          data={data}
+          margin={{ top: 8, right: 10, bottom: 0, left: -22 }}
+          // Recharts reports the nearest point as `activePayload` on click; open
+          // its month snapshot, ignoring clicks that land on an unscored gap.
+          onClick={
+            onSelectMonth
+              ? (state) => {
+                  const slot = state?.activePayload?.[0]?.payload;
+                  if (slot && slot.risk != null) onSelectMonth(slot.month);
+                }
+              : undefined
+          }
+        >
           <XAxis
             dataKey="label"
             // Thin the labels so a 24-month axis stays readable instead of a
@@ -113,8 +130,9 @@ export default function HistoryChart({ points, isLoading }) {
         </LineChart>
       </ResponsiveContainer>
       <figcaption className="mt-1 text-[11px] text-ink-soft">
-        Observed monthly risk, {formatMonth(firstMonth)} – {formatMonth(lastMonth)}. Any gaps
-        mark unscored months; dashed lines mark the High and Critical thresholds.
+        Observed monthly risk, {formatMonth(firstMonth)} – {formatMonth(lastMonth)}.
+        {onSelectMonth ? ' Click any month for its snapshot.' : ''} Any gaps mark unscored
+        months; dashed lines mark the High and Critical thresholds.
       </figcaption>
     </figure>
   );
