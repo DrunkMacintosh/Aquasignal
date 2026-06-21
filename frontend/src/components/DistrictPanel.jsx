@@ -115,10 +115,10 @@ export default function DistrictPanel({ selection, month, onClose }) {
       <HistoryPopout
         district={selection.name}
         onClose={() => setHistoryOpen(false)}
-        onSelectMonth={(picked) => {
-          setHistoryOpen(false);
-          setSnapshotMonth(picked);
-        }}
+        // Keep the graph open so it sits beside the snapshot (the popout docks
+        // to the left of the panel); picking another point just updates the
+        // snapshot live.
+        onSelectMonth={(picked) => setSnapshotMonth(picked)}
       />
     )}
     </>
