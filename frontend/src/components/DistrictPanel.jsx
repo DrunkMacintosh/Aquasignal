@@ -3,36 +3,43 @@
 //   { type: 'cell', cell }      — opened by clicking a grid cell on the map
 //   { type: 'district', name }  — opened from the critical-alert banner
 import { useEffect, useState } from 'react';
-import { formatCellName } from '../lib/risk.js';
+import { formatCellName, formatMonth } from '../lib/risk.js';
 import { adminUnitType } from '../lib/adminUnits.js';
 import CellDetails from './panel/CellDetails.jsx';
 import DistrictDetails from './panel/DistrictDetails.jsx';
+import MonthSnapshot from './panel/MonthSnapshot.jsx';
 import AdvisorPopout from './panel/AdvisorPopout.jsx';
 import HistoryPopout from './panel/HistoryPopout.jsx';
 
 export default function DistrictPanel({ selection, month, onClose }) {
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // A month picked from the history graph replaces the overview with that
+  // month's snapshot; null = the normal overview.
+  const [snapshotMonth, setSnapshotMonth] = useState(null);
 
-  // The popouts belong to one selection; reset them whenever the selection
-  // changes (new district) or the panel closes.
+  // The popouts and snapshot belong to one selection; reset them whenever the
+  // selection changes (new district) or the panel closes.
   useEffect(() => {
     setAdvisorOpen(false);
     setHistoryOpen(false);
+    setSnapshotMonth(null);
   }, [selection]);
 
   useEffect(() => {
     if (!selection) return undefined;
     const handleKey = (event) => {
       if (event.key !== 'Escape') return;
-      // Escape closes an open popout first, then the panel on a second press.
+      // Escape unwinds one layer at a time: open popout, then the month
+      // snapshot (back to overview), then the panel itself.
       if (advisorOpen) setAdvisorOpen(false);
       else if (historyOpen) setHistoryOpen(false);
+      else if (snapshotMonth) setSnapshotMonth(null);
       else onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [selection, advisorOpen, historyOpen, onClose]);
+  }, [selection, advisorOpen, historyOpen, snapshotMonth, onClose]);
 
   if (!selection) return null;
 
@@ -40,7 +47,9 @@ export default function DistrictPanel({ selection, month, onClose }) {
   const title = isCell ? formatCellName(selection.cell.cell_id) : selection.name;
   const subtitle = isCell
     ? `Grid cell ${selection.cell.cell_id}`
-    : `${adminUnitType(selection.name)} overview`;
+    : snapshotMonth
+      ? `${adminUnitType(selection.name)} · ${formatMonth(snapshotMonth)}`
+      : `${adminUnitType(selection.name)} overview`;
 
   return (
     <>
@@ -74,6 +83,12 @@ export default function DistrictPanel({ selection, month, onClose }) {
       <div className="panel-scroll min-h-0 flex-1 overflow-y-auto">
         {isCell ? (
           <CellDetails cell={selection.cell} month={month} />
+        ) : snapshotMonth ? (
+          <MonthSnapshot
+            name={selection.name}
+            month={snapshotMonth}
+            onBack={() => setSnapshotMonth(null)}
+          />
         ) : (
           <DistrictDetails
             name={selection.name}
@@ -97,7 +112,14 @@ export default function DistrictPanel({ selection, month, onClose }) {
       <AdvisorPopout district={selection.name} onClose={() => setAdvisorOpen(false)} />
     )}
     {historyOpen && !isCell && (
-      <HistoryPopout district={selection.name} onClose={() => setHistoryOpen(false)} />
+      <HistoryPopout
+        district={selection.name}
+        onClose={() => setHistoryOpen(false)}
+        onSelectMonth={(picked) => {
+          setHistoryOpen(false);
+          setSnapshotMonth(picked);
+        }}
+      />
     )}
     </>
   );

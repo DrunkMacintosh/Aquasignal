@@ -7,7 +7,7 @@
 import { useDistrictHistory } from '../../api/hooks.js';
 import HistoryChart from '../HistoryChart.jsx';
 
-export default function HistoryPopout({ district, onClose }) {
+export default function HistoryPopout({ district, onClose, onSelectMonth }) {
   const history = useDistrictHistory(district);
   const monthly = history.data?.monthly;
 
@@ -40,7 +40,11 @@ export default function HistoryPopout({ district, onClose }) {
         {history.isError ? (
           <p className="text-sm text-ink-soft">History could not be loaded.</p>
         ) : (
-          <HistoryChart points={monthly} isLoading={history.isPending} />
+          <HistoryChart
+            points={monthly}
+            isLoading={history.isPending}
+            onSelectMonth={onSelectMonth}
+          />
         )}
       </div>
     </aside>

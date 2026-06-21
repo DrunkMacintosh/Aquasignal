@@ -95,6 +95,18 @@ export function trendFromHistory(monthly) {
   return 'stable';
 }
 
+/**
+ * Trend as of a specific month: the same rule applied to history up to and
+ * including `month`, so a snapshot of a past month shows the trajectory it had
+ * then rather than today's.
+ */
+export function trendAtMonth(monthly, month) {
+  if (!Array.isArray(monthly)) return 'stable';
+  const idx = monthly.findIndex((point) => point.month === month);
+  if (idx < 0) return 'stable';
+  return trendFromHistory(monthly.slice(0, idx + 1));
+}
+
 /** '10.125_105.625' -> '10.125°N · 105.625°E' */
 export function formatCellName(cellId) {
   const [latRaw, lonRaw] = String(cellId ?? '').split('_');

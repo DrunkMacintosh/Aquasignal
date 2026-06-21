@@ -107,10 +107,13 @@ export function useCellSatellite(cellId) {
   });
 }
 
-export function useDistrictSatellite(districtName) {
+// `months` is part of the key so the overview (24-month sparklines) and the
+// month snapshot (full record, to reach an arbitrary past month) cache
+// independently instead of clobbering each other.
+export function useDistrictSatellite(districtName, months = 24) {
   return useQuery({
-    queryKey: ['satellite', 'district', districtName],
-    queryFn: () => fetchDistrictSatellite(districtName),
+    queryKey: ['satellite', 'district', districtName, months],
+    queryFn: () => fetchDistrictSatellite(districtName, months),
     enabled: Boolean(districtName),
     staleTime: 30 * MINUTE,
     gcTime: DAY,

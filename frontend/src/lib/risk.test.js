@@ -9,6 +9,7 @@ import {
   riskBand,
   riskRampGradient,
   shortMonth,
+  trendAtMonth,
   trendFromHistory,
   trendInfo,
 } from './risk.js';
@@ -103,6 +104,25 @@ describe('trendFromHistory', () => {
     expect(trendFromHistory(series([40, 50]))).toBe('stable');
     expect(trendFromHistory([])).toBe('stable');
     expect(trendFromHistory(undefined)).toBe('stable');
+  });
+});
+
+describe('trendAtMonth', () => {
+  const series = (values) =>
+    values.map((risk, index) => ({ month: `2026-0${index + 1}`, risk }));
+
+  test('reads the trajectory as of the given month, not the latest', () => {
+    // +6 over the 3 months into 2026-04 (worsening), -6 by 2026-06 (improving)
+    const monthly = series([40, 41, 42, 46, 44, 36]);
+    expect(trendAtMonth(monthly, '2026-04')).toBe('worsening'); // 46 vs 40
+    expect(trendAtMonth(monthly, '2026-06')).toBe('improving'); // 36 vs 42
+  });
+
+  test('is stable for an unknown month or before enough history exists', () => {
+    const monthly = series([40, 41, 42, 46]);
+    expect(trendAtMonth(monthly, '2030-01')).toBe('stable');
+    expect(trendAtMonth(monthly, '2026-02')).toBe('stable');
+    expect(trendAtMonth(undefined, '2026-01')).toBe('stable');
   });
 });
 
