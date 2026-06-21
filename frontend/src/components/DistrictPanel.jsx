@@ -119,6 +119,12 @@ export default function DistrictPanel({ selection, month, onClose }) {
         // to the left of the panel); picking another point just updates the
         // snapshot live.
         onSelectMonth={(picked) => setSnapshotMonth(picked)}
+        // Return all the way to the live overview: close the graph and drop any
+        // month snapshot.
+        onBackToOverview={() => {
+          setHistoryOpen(false);
+          setSnapshotMonth(null);
+        }}
       />
     )}
     </>
