@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCriticalDistricts } from '../api/hooks.js';
+import Banner from './ui/Banner.jsx';
 
 /**
  * Persistent banner shown while any subscribed district sits in the critical
@@ -12,39 +13,33 @@ export default function AlertBanner({ onOpenDistrict }) {
   if (critical.length === 0 || dismissed) return null;
 
   return (
-    <div
-      role="alert"
-      className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-risk-critical/40 bg-risk-critical px-4 py-2.5 text-white shadow-card animate-fade-up"
+    <Banner
+      tone="critical"
+      icon="⚠"
+      onDismiss={() => setDismissed(true)}
+      className="flex-wrap gap-x-3 gap-y-1"
     >
-      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em]">
-        ⚠ Critical risk
+      <span className="mr-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em]">
+        Critical risk
       </span>
       <span className="text-sm">
         {critical.length === 1
           ? 'This province or city needs attention:'
           : 'These provinces and cities need attention:'}
       </span>
-      <span className="flex flex-wrap gap-1.5">
+      <span className="ml-2 inline-flex flex-wrap gap-1.5">
         {critical.map((district) => (
           <button
             key={district}
             type="button"
             onClick={() => onOpenDistrict(district)}
             aria-label={`Open ${district} details`}
-            className="rounded-md bg-white/15 px-2.5 py-0.5 text-sm font-semibold underline-offset-2 transition-colors hover:bg-white/30 focus-visible:outline-white"
+            className="rounded-md bg-white/15 px-2.5 py-0.5 text-sm font-semibold transition-colors hover:bg-white/30 focus-visible:outline-white"
           >
             {district}
           </button>
         ))}
       </span>
-      <button
-        type="button"
-        onClick={() => setDismissed(true)}
-        aria-label="Dismiss critical risk banner"
-        className="ml-auto rounded-md px-2 py-0.5 text-lg leading-none hover:bg-white/20 focus-visible:outline-white"
-      >
-        ×
-      </button>
-    </div>
+    </Banner>
   );
 }
