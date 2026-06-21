@@ -7,7 +7,7 @@ import { lazy, Suspense, useState } from 'react';
 import { useDistrictRiskMap, useRiskMap } from '../api/hooks.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import AlertBanner from '../components/AlertBanner.jsx';
-import { RiskLegend, SegmentedControl } from '../components/ui';
+import { Banner, RiskLegend, SegmentedControl } from '../components/ui';
 import RiskMap from '../components/Map.jsx';
 import StaleDataBanner from '../components/StaleDataBanner.jsx';
 import { formatMonth } from '../lib/risk.js';
@@ -170,20 +170,17 @@ function StatusCard({ month, updatedAt, isFetching, isAuthenticated, onRefresh, 
 
 function SessionExpiryNotice({ onSignIn }) {
   return (
-    <div
-      role="status"
-      className="pointer-events-auto flex items-center gap-3 rounded-xl border border-risk-medium/60 bg-[#FFF8E1] px-4 py-2.5 shadow-card animate-fade-up"
-    >
-      <span aria-hidden="true">⏳</span>
-      <p className="text-sm font-medium">Your session expires soon.</p>
+    <Banner tone="warn" icon="⏳" actions={
       <button
         type="button"
         onClick={onSignIn}
-        className="ml-auto rounded-md border border-ink/15 bg-surface px-3 py-1 text-xs font-semibold hover:bg-paper"
+        className="rounded-md border border-ink/15 bg-surface px-3 py-1 text-xs font-semibold hover:bg-paper"
       >
         Sign in again
       </button>
-    </div>
+    }>
+      <p className="text-sm font-medium">Your session expires soon.</p>
+    </Banner>
   );
 }
 
