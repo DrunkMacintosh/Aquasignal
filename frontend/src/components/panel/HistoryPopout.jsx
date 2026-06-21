@@ -7,7 +7,7 @@
 import { useDistrictHistory } from '../../api/hooks.js';
 import HistoryChart from '../HistoryChart.jsx';
 
-export default function HistoryPopout({ district, onClose, onSelectMonth }) {
+export default function HistoryPopout({ district, onClose, onSelectMonth, onBackToOverview }) {
   const history = useDistrictHistory(district);
   const monthly = history.data?.monthly;
 
@@ -37,6 +37,15 @@ export default function HistoryPopout({ district, onClose, onSelectMonth }) {
       </header>
 
       <div className="panel-scroll min-h-0 flex-1 overflow-y-auto p-5">
+        {onBackToOverview && (
+          <button
+            type="button"
+            onClick={onBackToOverview}
+            className="mb-4 inline-flex items-center gap-1.5 rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink focus-visible:outline-water"
+          >
+            <span aria-hidden="true">←</span> Back to overview
+          </button>
+        )}
         {history.isError ? (
           <p className="text-sm text-ink-soft">History could not be loaded.</p>
         ) : (
