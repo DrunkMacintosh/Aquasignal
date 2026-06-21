@@ -4,7 +4,7 @@
 // live behind a district picker.
 import { useCellForecast, useCellHistory, useCellSatellite } from '../../api/hooks.js';
 import ForecastChart from '../ForecastChart.jsx';
-import RiskScoreCard from '../RiskScoreCard.jsx';
+import { RiskScoreCard } from '../ui';
 import SatelliteObservations from '../SatelliteObservations.jsx';
 import Sparkline from '../Sparkline.jsx';
 import DistrictServices from './DistrictServices.jsx';

@@ -13,7 +13,7 @@ import { adminUnitNoun } from '../../lib/adminUnits.js';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
-import RiskScoreCard from '../RiskScoreCard.jsx';
+import { RiskScoreCard } from '../ui';
 import SatelliteObservations from '../SatelliteObservations.jsx';
 import Sparkline from '../Sparkline.jsx';
 import { PanelSkeleton } from '../Skeletons.jsx';

@@ -1,7 +1,7 @@
-import { NO_DATA_COLOR, RISK_BANDS, riskRampGradient } from '../lib/risk.js';
+import { NO_DATA_COLOR, RISK_BANDS, riskRampGradient } from '../../lib/risk.js';
 
 /** Survey-sheet style map key: a continuous ramp bar plus the named bands. */
-export default function MapLegend() {
+export default function RiskLegend() {
   return (
     <section className="card w-48 p-3" aria-label="Map legend: well-failure risk bands">
       <h2 className="microlabel">Well-failure risk</h2>

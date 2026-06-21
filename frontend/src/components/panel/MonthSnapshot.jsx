@@ -11,7 +11,7 @@ import {
 import { formatMonth, trendAtMonth } from '../../lib/risk.js';
 import { SATELLITE_VARIABLES } from '../../lib/satellite.js';
 import { ChartSkeleton, PanelSkeleton } from '../Skeletons.jsx';
-import RiskScoreCard from '../RiskScoreCard.jsx';
+import { RiskScoreCard } from '../ui';
 import PermeabilityCard from './PermeabilityCard.jsx';
 import SectionTitle from './SectionTitle.jsx';
 

@@ -7,9 +7,8 @@ import { lazy, Suspense, useState } from 'react';
 import { useDistrictRiskMap, useRiskMap } from '../api/hooks.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import AlertBanner from '../components/AlertBanner.jsx';
-import MapLegend from '../components/MapLegend.jsx';
+import { RiskLegend, SegmentedControl } from '../components/ui';
 import RiskMap from '../components/Map.jsx';
-import SegmentedControl from '../components/SegmentedControl.jsx';
 import StaleDataBanner from '../components/StaleDataBanner.jsx';
 import { formatMonth } from '../lib/risk.js';
 import { ADMIN_UNIT_LABEL } from '../lib/adminUnits.js';
@@ -91,7 +90,7 @@ export default function MapPage() {
       <div className="pointer-events-none absolute left-3 top-[4.75rem] z-10 flex flex-col gap-2 md:left-4 md:top-20 [&>*]:pointer-events-auto">
         {/* Every view now shows a risk choropleth (roads = districts over the
             street basemap), so the key is always relevant. */}
-        <MapLegend />
+        <RiskLegend />
       </div>
 
       {/* View switcher floats centred at the bottom, dynamic-island style,
