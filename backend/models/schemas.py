@@ -527,9 +527,21 @@ class AdvisorRiskDriver(BaseModel):
 
 
 class AdvisorPriorityAction(BaseModel):
-    """A recommended action scored on impact and effort (1-5) for prioritization."""
+    """A recommended action, deepened into an executable solution: the action, a
+    how/why detail, concrete steps, the expected payoff, and impact/effort (1-5)
+    for prioritization. The extra fields are defaulted so a thin model response
+    still renders."""
 
-    action: str = ""
+    action: str = Field(default="", description="The recommendation, one line.")
+    detail: str = Field(
+        default="", description="How to do it and why it works here (1-2 sentences)."
+    )
+    steps: list[str] = Field(
+        default_factory=list, description="Concrete sub-steps to carry it out."
+    )
+    benefit: str = Field(
+        default="", description="Expected outcome/payoff, quantified where possible."
+    )
     timeframe: str = Field(default="", description="e.g. 'Immediate (0-1 month)'.")
     impact: int = Field(default=0, ge=0, le=5, description="Expected benefit, 1 (low) - 5 (high).")
     effort: int = Field(default=0, ge=0, le=5, description="Effort/cost, 1 (low) - 5 (high).")

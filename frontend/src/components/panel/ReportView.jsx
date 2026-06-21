@@ -298,6 +298,9 @@ function reportToText(report, manifest, district, site = null) {
     for (const a of report.priority_actions) {
       const tf = a.timeframe ? `[${a.timeframe}] ` : '';
       lines.push(`- ${tf}${a.action} (impact ${a.impact}/5, effort ${a.effort}/5)`);
+      if (a.detail) lines.push(`  ${a.detail}`);
+      for (const s of a.steps ?? []) lines.push(`    • ${s}`);
+      if (a.benefit) lines.push(`  Outcome: ${a.benefit}`);
     }
   } else if (report.action_plan?.length) {
     lines.push('', 'ACTION PLAN');

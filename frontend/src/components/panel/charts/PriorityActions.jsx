@@ -54,19 +54,37 @@ export default function PriorityActions({ actions = [] }) {
 }
 
 function ActionRow({ action }) {
-  const { action: text, impact = 0, effort = 0 } = action;
+  const { action: text, detail = '', steps = [], benefit = '', impact = 0, effort = 0 } = action;
   const quickWin = impact >= 4 && effort > 0 && effort <= 2;
   return (
-    <li className="rounded-lg border border-ink/10 bg-surface px-3 py-2">
+    <li className="rounded-lg border border-ink/10 bg-surface px-3 py-2.5">
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 text-sm leading-snug">{text}</p>
+        <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">{text}</p>
         {quickWin && (
           <span className="shrink-0 rounded-full bg-water/10 px-1.5 py-0.5 text-[10px] font-semibold text-water">
             quick win
           </span>
         )}
       </div>
-      <div className="mt-1.5 flex items-center gap-4 text-[11px] text-ink-soft">
+
+      {detail && <p className="mt-1 text-xs leading-relaxed text-ink-soft">{detail}</p>}
+
+      {steps.length > 0 && (
+        <ol className="mt-1.5 list-decimal space-y-0.5 pl-4 text-xs leading-relaxed text-ink marker:text-ink-faint">
+          {steps.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ol>
+      )}
+
+      {benefit && (
+        <p className="mt-1.5 text-xs leading-relaxed text-ink">
+          <span className="font-semibold text-water">Outcome: </span>
+          {benefit}
+        </p>
+      )}
+
+      <div className="mt-2 flex items-center gap-4 text-[11px] text-ink-soft">
         <Pips label="Impact" value={impact} color={CHART.water} />
         <Pips label="Effort" value={effort} color={CHART.inkFaint} />
       </div>

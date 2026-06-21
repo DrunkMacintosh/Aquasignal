@@ -43,7 +43,7 @@ _RETRY_BACKOFF_SECONDS = (1.0, 2.0)
 # now carries structured visual blocks (metrics/allocation/drivers/actions) on
 # top of the prose, so it needs more headroom than the text-only version did.
 _QUESTIONS_MAX_TOKENS = 600
-_REPORT_MAX_TOKENS = 2400
+_REPORT_MAX_TOKENS = 3000
 
 # Intake size + answer caps mirror the schema; keep prompts (and cost) bounded.
 MIN_QUESTIONS = 3
@@ -209,8 +209,12 @@ _REPORT_SCHEMA = (
     '    {"label": "<a RISK_DRIVERS label>", "weight": 0}\n'
     "  ],\n"
     '  "priority_actions": [\n'
-    '    {"action": "one concrete step", "timeframe": "Immediate (0-1 month) | '
-    'Short-term (1-3 months) | Medium-term (3-6 months)", "impact": 3, "effort": 2}\n'
+    '    {"action": "the recommendation in one line", '
+    '"detail": "how to do it and why it works for THIS site (1-2 sentences)", '
+    '"steps": ["concrete sub-step", "concrete sub-step"], '
+    '"benefit": "expected outcome, quantified where possible", '
+    '"timeframe": "Immediate (0-1 month) | Short-term (1-3 months) | '
+    'Medium-term (3-6 months)", "impact": 3, "effort": 2}\n'
     "  ],\n"
     '  "risks": ["what could go wrong or what to watch"],\n'
     '  "monitoring": ["metrics to track and when to revisit"]\n'
@@ -386,11 +390,17 @@ def build_report_prompt(
             "TASK: Write a DEEP, specific water-use plan for this goal and "
             "location as a structured report. Ground every statement in the data, "
             "the user's site profile, and any answers; be concrete and realistic, "
-            "not generic -- reference the user's own figures where given. Provide "
-            "3-5 priority_actions across the three timeframes, each scored for "
-            "impact and effort (1-5). You are advisory only -- include a reminder "
-            "to confirm critical decisions with local water authorities (in risks "
-            "or monitoring).\n"
+            "not generic -- reference the user's own figures where given.\n"
+            "The priority_actions are the most important part: make each one a "
+            "real, executable SOLUTION, not a slogan. For each, give 'detail' "
+            "explaining HOW to do it and WHY it works for this specific site and "
+            "risk drivers, 'steps' with 2-4 concrete sub-steps the user can follow, "
+            "and 'benefit' stating the expected outcome (quantify it from the data "
+            "or the user's figures where possible, e.g. m3/month saved or risk "
+            "points avoided). Provide 3-5 priority_actions spread across the three "
+            "timeframes, each scored for impact and effort (1-5).\n"
+            "You are advisory only -- include a reminder to confirm critical "
+            "decisions with local water authorities (in risks or monitoring).\n"
             + _blueprint_block(need)
             + "Return ONLY a JSON object of exactly this shape, no prose, no "
             "markdown:\n"
@@ -639,6 +649,9 @@ def _as_priority_actions(value) -> list[dict]:
         out.append(
             {
                 "action": action,
+                "detail": str(item.get("detail") or "").strip()[:600],
+                "steps": _as_str_list(item.get("steps"), item_cap=240, max_items=6),
+                "benefit": str(item.get("benefit") or "").strip()[:300],
                 "timeframe": str(item.get("timeframe") or "").strip()[:80],
                 "impact": _as_score(item.get("impact")),
                 "effort": _as_score(item.get("effort")),

@@ -93,6 +93,9 @@ def test_report_prompt_includes_answers_and_full_schema():
         "monitoring",
     ):
         assert key in prompt
+    # priority_actions are deepened into executable solutions.
+    for key in ("detail", "steps", "benefit"):
+        assert key in prompt
 
 
 def test_report_prompt_injects_per_need_blueprint_labels():
@@ -179,7 +182,10 @@ def test_normalize_report_coerces_structured_blocks():
             "risk_drivers": [{"label": "Over-abstraction", "weight": 200}],  # clamped to 100
             "priority_actions": [
                 {"action": "Install drip lines", "timeframe": "Immediate (0-1 month)",
-                 "impact": 9, "effort": "2"},
+                 "impact": 9, "effort": "2",
+                 "detail": "Replace flood with drip on the driest fields.",
+                 "steps": ["Map the fields", "Lay drip lines", 42],  # non-str coerced
+                 "benefit": "Cuts pumping ~50%."},
                 {"timeframe": "later"},  # no action -> dropped
             ],
         }
@@ -199,6 +205,10 @@ def test_normalize_report_coerces_structured_blocks():
     assert len(actions) == 1
     assert actions[0]["impact"] == 5  # clamped 9 -> 5
     assert actions[0]["effort"] == 2
+    # Deepened action fields are coerced too: steps -> list[str], detail/benefit kept.
+    assert actions[0]["detail"].startswith("Replace flood")
+    assert actions[0]["steps"] == ["Map the fields", "Lay drip lines", "42"]
+    assert actions[0]["benefit"] == "Cuts pumping ~50%."
 
     # The seam that matters: the normalized dict must validate as AdvisorReport
     # with the structured blocks populated (catches any field-name drift between
@@ -208,6 +218,8 @@ def test_normalize_report_coerces_structured_blocks():
     assert model.allocation[0].percent == 70.0
     assert model.risk_drivers[0].weight == 100.0
     assert model.priority_actions[0].impact == 5
+    assert model.priority_actions[0].steps == ["Map the fields", "Lay drip lines", "42"]
+    assert model.priority_actions[0].benefit == "Cuts pumping ~50%."
 
 
 # --------------------------------------------------------------------------- #
