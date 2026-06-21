@@ -4,9 +4,10 @@
 // (reportManifest.js) decides which charts appear, in what order, with what
 // per-need copy — so each usage topic reads bespoke. Every section is skipped
 // when it has no data, so a partial model response still renders cleanly.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { needLabel } from '../../lib/advisor.js';
 import { manifestForNeed, normalizeAllocation } from '../../lib/reportManifest.js';
+import { exportReportPdf } from '../../lib/exportReportPdf.js';
 import TrajectoryChart from './charts/TrajectoryChart.jsx';
 import WaterBalanceChart from './charts/WaterBalanceChart.jsx';
 import RechargeGauge from './charts/RechargeGauge.jsx';
@@ -31,9 +32,11 @@ export default function ReportView({ report, need, district, snapshot = {}, site
 
   const manifest = manifestForNeed(need);
   const sections = manifest.sections.filter((s) => sectionHasData(s.key, report, snapshot));
+  const articleRef = useRef(null);
 
   return (
     <article
+      ref={articleRef}
       className="space-y-5 rounded-lg border border-ink/10 bg-paper/60 p-4"
       aria-label="Water-plan report"
     >
@@ -118,7 +121,18 @@ export default function ReportView({ report, need, district, snapshot = {}, site
         </Section>
       )}
 
-      <CopyButton text={reportToText(report, manifest, district, site)} />
+      {/* Action row — excluded from the exported PDF itself. */}
+      <div className="flex flex-wrap items-center gap-2" data-export-exclude>
+        <CopyButton text={reportToText(report, manifest, district, site)} />
+        <button
+          type="button"
+          onClick={() => exportReportPdf(articleRef.current, `AquaSignal water plan — ${district}`)}
+          title="Opens your browser's print dialog — choose “Save as PDF”."
+          className="rounded-lg border border-water/40 bg-water/10 px-3 py-1.5 text-xs font-semibold text-water transition-colors hover:bg-water/20"
+        >
+          Export PDF
+        </button>
+      </div>
     </article>
   );
 }
