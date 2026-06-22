@@ -71,7 +71,7 @@ export default function DistrictPanel({ selection, month, onClose }) {
           </h2>
           <MicroLabel className="mt-1">{subtitle}</MicroLabel>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close detail panel" className="shrink-0 !px-2.5 text-lg leading-none">×</Button>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close detail panel" className="shrink-0 !border-ink/10 !px-2.5 !py-1 text-lg leading-none">×</Button>
       </header>
 
       <div className="panel-scroll min-h-0 flex-1 overflow-y-auto">

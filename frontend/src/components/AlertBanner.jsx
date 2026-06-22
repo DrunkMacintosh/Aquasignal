@@ -17,6 +17,7 @@ export default function AlertBanner({ onOpenDistrict }) {
       tone="critical"
       icon="⚠"
       onDismiss={() => setDismissed(true)}
+      dismissLabel="Dismiss critical risk banner"
       className="flex-wrap gap-x-3 gap-y-1"
     >
       <span className="mr-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em]">

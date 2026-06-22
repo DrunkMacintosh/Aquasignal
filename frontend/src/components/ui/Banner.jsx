@@ -7,7 +7,7 @@ const TONES = {
   info: 'bg-surface text-ink border-ink/10',
 };
 
-export default function Banner({ tone = 'info', icon, children, onDismiss, actions, className = '', ...rest }) {
+export default function Banner({ tone = 'info', icon, children, onDismiss, dismissLabel = 'Dismiss', actions, className = '', ...rest }) {
   return (
     <div
       role={tone === 'critical' ? 'alert' : 'status'}
@@ -21,7 +21,7 @@ export default function Banner({ tone = 'info', icon, children, onDismiss, actio
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label={dismissLabel}
           className="-mr-1 shrink-0 px-0.5 text-lg leading-none opacity-80 hover:opacity-100"
         >
           ×
