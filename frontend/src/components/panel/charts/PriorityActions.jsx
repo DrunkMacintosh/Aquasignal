@@ -2,6 +2,7 @@
 // and effort (1-5) shown as pip meters. High-impact / low-effort actions are
 // flagged "quick win" so users can see where to start.
 import { CHART } from '../../../lib/reportManifest.js';
+import { Badge, MicroLabel } from '../../ui';
 
 // Canonical timeframe ordering; unknown timeframes fall to the end in first-seen
 // order.
@@ -61,9 +62,9 @@ function ActionRow({ action }) {
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">{text}</p>
         {quickWin && (
-          <span className="shrink-0 rounded-full bg-water/10 px-1.5 py-0.5 text-[10px] font-semibold text-water">
+          <Badge tone="accent" className="shrink-0 !px-1.5 !py-0.5 !text-[10px]">
             quick win
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -96,7 +97,7 @@ function Pips({ label, value, color }) {
   if (!value) return null;
   return (
     <span className="flex items-center gap-1" aria-label={`${label} ${value} of 5`}>
-      <span className="microlabel">{label}</span>
+      <MicroLabel>{label}</MicroLabel>
       <span className="flex gap-0.5" aria-hidden="true">
         {[1, 2, 3, 4, 5].map((n) => (
           <span
