@@ -7,7 +7,7 @@ import { lazy, Suspense, useState } from 'react';
 import { useDistrictRiskMap, useRiskMap } from '../api/hooks.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import AlertBanner from '../components/AlertBanner.jsx';
-import { Banner, RiskLegend, SegmentedControl } from '../components/ui';
+import { Banner, Button, Card, MicroLabel, RiskLegend, SegmentedControl } from '../components/ui';
 import RiskMap from '../components/Map.jsx';
 import StaleDataBanner from '../components/StaleDataBanner.jsx';
 import { formatMonth } from '../lib/risk.js';
@@ -110,15 +110,15 @@ export default function MapPage() {
 
 function Brand() {
   return (
-    <div className="pointer-events-auto card flex items-center gap-2.5 px-3.5 py-2">
+    <Card padding="8px 14px" className="pointer-events-auto flex items-center gap-2.5">
       <svg viewBox="0 0 32 32" className="h-6 w-6" aria-hidden="true">
         <path d="M16 3c5 7 9 11.5 9 17a9 9 0 1 1-18 0c0-5.5 4-10 9-17z" fill="#0E6E83" />
       </svg>
       <div>
         <p className="font-display text-base font-bold leading-none">AquaSignal</p>
-        <p className="microlabel mt-0.5 hidden sm:block">Groundwater survey · Mekong Delta</p>
+        <MicroLabel className="mt-0.5 hidden sm:block">Groundwater survey · Mekong Delta</MicroLabel>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -128,43 +128,25 @@ function StatusCard({ month, updatedAt, isFetching, isAuthenticated, onRefresh, 
     : '—';
 
   return (
-    <div className="pointer-events-auto card flex items-center gap-2 px-3 py-2 sm:gap-3">
+    <Card padding="8px 12px" className="pointer-events-auto flex items-center gap-2 sm:gap-3">
       <div className="hidden text-right sm:block">
         <p className="font-mono text-xs font-semibold">{month ? formatMonth(month) : 'No data'}</p>
-        <p className="microlabel">Fetched {fetchedTime}</p>
+        <MicroLabel>Fetched {fetchedTime}</MicroLabel>
       </div>
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={isFetching}
-        aria-label="Refresh risk data"
-        className="btn-secondary !px-3 !py-1.5 text-xs"
-      >
-        <span className={isFetching ? 'inline-block animate-spin' : ''} aria-hidden="true">
-          ⟳
-        </span>
+      <Button variant="secondary" size="sm" onClick={onRefresh} disabled={isFetching} aria-label="Refresh risk data">
+        <span className={isFetching ? 'inline-block animate-spin' : ''} aria-hidden="true">⟳</span>
         {isFetching ? 'Updating…' : 'Refresh'}
-      </button>
+      </Button>
       {isAuthenticated ? (
-        <button
-          type="button"
-          onClick={onSignOut}
-          aria-label="Sign out"
-          className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink"
-        >
+        <Button variant="ghost" size="sm" onClick={onSignOut} aria-label="Sign out" className="!px-2">
           Sign out
-        </button>
+        </Button>
       ) : (
-        <button
-          type="button"
-          onClick={onSignIn}
-          aria-label="Sign in"
-          className="btn-secondary !px-3 !py-1.5 text-xs"
-        >
+        <Button variant="secondary" size="sm" onClick={onSignIn} aria-label="Sign in">
           Sign in
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -188,17 +170,15 @@ function HardError({ error, onRetry }) {
   const detail = error?.response?.data?.detail;
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-paper/80 p-6">
-      <div className="card max-w-md p-6 text-center animate-fade-up" role="alert">
+      <Card className="max-w-md text-center animate-fade-up" padding={24} role="alert">
         <p className="font-display text-lg font-semibold">Couldn't load risk data</p>
         <p className="mt-2 text-sm text-ink-soft">
           {typeof detail === 'string'
             ? detail
             : 'The AquaSignal server is unreachable. Your network or the service may be down.'}
         </p>
-        <button type="button" onClick={onRetry} className="btn-primary mt-5">
-          Try again
-        </button>
-      </div>
+        <Button className="mt-5" onClick={onRetry}>Try again</Button>
+      </Card>
     </div>
   );
 }
