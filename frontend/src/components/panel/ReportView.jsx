@@ -128,21 +128,7 @@ export default function ReportView({ report, need, district, snapshot = {}, site
       {/* Action row — excluded from the exported PDF itself. */}
       <div className="flex flex-wrap items-center gap-2" data-export-exclude>
         <CopyButton text={reportToText(report, manifest, district, site)} />
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={(e) =>
-            exportReportPdf(
-              e.currentTarget.closest('[data-report-root]') ||
-                document.querySelector('[data-report-root]'),
-              `AquaSignal water plan — ${district}`,
-            )
-          }
-          title="Opens your browser print dialog — choose Save as PDF."
-          className="!border-water/40 !bg-water/10 !text-water hover:!bg-water/20"
-        >
-          Export PDF
-        </Button>
+        <ExportPdfButton title={`AquaSignal water plan — ${district}`} />
       </div>
     </Card>
   );
@@ -256,6 +242,38 @@ function Bullets({ items = [] }) {
         <li key={i}>{item}</li>
       ))}
     </ul>
+  );
+}
+
+// Downloads the report as a PDF file. Shows a "Generating…" state while
+// html2canvas + jsPDF (lazy-loaded) do their work. The report node is found via
+// the data-report-root hook on the click (read synchronously before any await).
+function ExportPdfButton({ title }) {
+  const [busy, setBusy] = useState(false);
+  async function handleExport(event) {
+    const root =
+      event.currentTarget.closest('[data-report-root]') ||
+      document.querySelector('[data-report-root]');
+    setBusy(true);
+    try {
+      await exportReportPdf(root, title);
+    } catch {
+      // Generation failed (e.g. an unsupported style); leave the report intact.
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      disabled={busy}
+      onClick={handleExport}
+      title="Download the report as a PDF file."
+      className="!border-water/40 !bg-water/10 !text-water hover:!bg-water/20 disabled:opacity-60"
+    >
+      {busy ? 'Generating…' : 'Export PDF'}
+    </Button>
   );
 }
 

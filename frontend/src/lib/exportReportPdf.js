@@ -1,105 +1,68 @@
-// Export the rendered advisor report to PDF via the browser's native
-// print-to-PDF. We deep-clone the report node into an off-screen iframe that
-// reuses the app's stylesheets (so Tailwind classes + fonts apply), strip the
-// action buttons (data-export-exclude), then trigger print from the PARENT once
-// the iframe has loaded — the user chooses "Save as PDF". recharts SVGs print as
-// crisp vectors, so there are no extra dependencies.
+// Export the rendered advisor report as a downloadable PDF FILE (no print
+// dialog). We rasterize the report node with html2canvas, write the image into
+// a multi-page A4 PDF with jsPDF, and trigger a download. Both libraries are
+// dynamically imported so they are code-split out of the main bundle and only
+// fetched the first time someone exports.
 //
-// Robustness notes (these are the things that silently break print-to-iframe):
-//  - The iframe must have REAL dimensions; a 0x0 iframe prints a blank page in
-//    Chromium. We give it A4 px size and hide it off-screen instead.
-//  - We load content via `srcdoc` and trigger print from the parent's onload,
-//    rather than document.write + an injected inline <script>. The latter races
-//    the load event (handler can attach after load already fired) and is blocked
-//    under a strict CSP. srcdoc fires onload reliably and needs no inline script.
+// recharts charts are SVG; html2canvas rasterizes them into the page image. The
+// action buttons are skipped via `ignoreElements` so they don't appear in the
+// PDF.
 
-function escapeHtml(value) {
-  return String(value).replace(
-    /[&<>"]/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
-  );
+function pdfFilename(title) {
+  const base =
+    String(title)
+      .replace(/[^\w.-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'AquaSignal-report';
+  return `${base}.pdf`;
 }
 
 /**
- * Print `node` (the report <article>) to PDF. No-op when there is no node or no
- * DOM (e.g. SSR / unit tests).
+ * Generate and download a PDF of the report `node`. Resolves once the download
+ * has been triggered. No-op without a node or DOM (SSR / unit tests).
  *
  * @param {HTMLElement|null} node
- * @param {string} [title] - document title (becomes the default PDF filename)
+ * @param {string} [title] - used for the downloaded filename
+ * @returns {Promise<void>}
  */
-export function exportReportPdf(node, title = 'AquaSignal report') {
+export async function exportReportPdf(node, title = 'AquaSignal report') {
   if (!node || typeof document === 'undefined') return;
 
-  // Clone so we can drop the action buttons without touching the live report.
-  const clone = node.cloneNode(true);
-  clone.querySelectorAll('[data-export-exclude]').forEach((el) => el.remove());
+  const [{ default: html2canvas }, jspdf] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ]);
+  const JsPDF = jspdf.jsPDF || jspdf.default;
 
-  // Reuse the app's own stylesheets (dev: <style>, prod: <link>) plus any font
-  // links from <head>, so the PDF looks like the on-screen report.
-  const styles = [
-    ...document.querySelectorAll('link[rel="stylesheet"], style, link[as="font"], link[rel="preconnect"]'),
-  ]
-    .map((n) => n.outerHTML)
-    .join('');
-
-  const html =
-    '<!doctype html><html><head><meta charset="utf-8">' +
-    styles +
-    '<style>' +
-    '@page{margin:14mm}' +
-    // Print background colours (cards, badges, chart fills) instead of dropping them.
-    '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-    'html,body{background:#fff;margin:0}' +
-    '.pdf-wrap{max-width:760px;margin:0 auto;padding:4px}' +
-    // Keep cards, charts and list rows from splitting across pages.
-    'section,figure,li{break-inside:avoid}h4{break-after:avoid}' +
-    '</style><title>' +
-    escapeHtml(title) +
-    '</title></head><body><div class="pdf-wrap">' +
-    clone.outerHTML +
-    '</div></body></html>';
-
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden', 'true');
-  // Real A4-ish size (so the document lays out) but parked off-screen.
-  Object.assign(iframe.style, {
-    position: 'fixed',
-    left: '-9999px',
-    top: '0',
-    width: '794px',
-    height: '1123px',
-    border: '0',
-    opacity: '0',
-    pointerEvents: 'none',
+  const canvas = await html2canvas(node, {
+    scale: 2, // render at 2x for a crisp result
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+    // Don't paint the action row (Copy / Export buttons) into the PDF.
+    ignoreElements: (el) =>
+      el.nodeType === 1 && typeof el.hasAttribute === 'function' && el.hasAttribute('data-export-exclude'),
   });
 
-  let printed = false;
-  const cleanup = () => {
-    if (document.body.contains(iframe)) iframe.remove();
-  };
+  const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const imgW = pageW;
+  const imgH = (canvas.height / canvas.width) * imgW;
+  // JPEG (on the white background) keeps the file small — a PNG of a scale-2
+  // capture runs to ~10 MB; JPEG at high quality is ~1-2 MB and still crisp.
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-  iframe.onload = () => {
-    const cdoc = iframe.contentDocument;
-    // Ignore the initial about:blank load; only print once our content is in.
-    if (printed || !cdoc || !cdoc.querySelector('.pdf-wrap')) return;
-    printed = true;
-    // Let fonts/stylesheets settle, then print from the parent.
-    setTimeout(() => {
-      const win = iframe.contentWindow;
-      try {
-        win.onafterprint = cleanup;
-        win.focus();
-        win.print();
-      } catch {
-        cleanup();
-        return;
-      }
-      // Fallback cleanup if onafterprint never fires.
-      setTimeout(cleanup, 60000);
-    }, 400);
-  };
+  // Single page, or slice the tall image across pages by shifting it up.
+  let position = 0;
+  let heightLeft = imgH;
+  pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+  heightLeft -= pageH;
+  while (heightLeft > 0) {
+    position -= pageH;
+    pdf.addPage();
+    pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+    heightLeft -= pageH;
+  }
 
-  // Set srcdoc before insertion so the iframe loads our content directly.
-  iframe.srcdoc = html;
-  document.body.appendChild(iframe);
+  pdf.save(pdfFilename(title));
 }
