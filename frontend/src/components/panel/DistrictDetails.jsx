@@ -60,7 +60,7 @@ export default function DistrictDetails({ name, onPlanWithAi, onSeeHistory }) {
           variant="secondary"
           fullWidth
           onClick={onPlanWithAi}
-          className="border-water/40 bg-water/10 text-water hover:bg-water/15"
+          className="rounded-xl border-water/40 bg-water/10 text-water hover:bg-water/15"
         >
           <span aria-hidden="true">✦</span> Plan your water use with AI
         </Button>
