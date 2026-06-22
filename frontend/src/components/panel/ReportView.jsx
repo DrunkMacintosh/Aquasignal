@@ -1,4 +1,4 @@
-﻿// Renders the advisor's report as an intricate, self-sufficient visual document:
+// Renders the advisor's report as an intricate, self-sufficient visual document:
 // grounded charts (real snapshot data) interleaved with the AI's narrative and
 // AI-derived charts (budget, drivers, targets, actions). The manifest
 // (reportManifest.js) decides which charts appear, in what order, with what
