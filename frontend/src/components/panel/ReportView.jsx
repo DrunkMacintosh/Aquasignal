@@ -4,7 +4,7 @@
 // (reportManifest.js) decides which charts appear, in what order, with what
 // per-need copy — so each usage topic reads bespoke. Every section is skipped
 // when it has no data, so a partial model response still renders cleanly.
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { needLabel } from '../../lib/advisor.js';
 import { manifestForNeed, normalizeAllocation } from '../../lib/reportManifest.js';
 import { exportReportPdf } from '../../lib/exportReportPdf.js';
@@ -33,12 +33,11 @@ export default function ReportView({ report, need, district, snapshot = {}, site
 
   const manifest = manifestForNeed(need);
   const sections = manifest.sections.filter((s) => sectionHasData(s.key, report, snapshot));
-  const articleRef = useRef(null);
 
   return (
     <Card
       as="article"
-      ref={articleRef}
+      data-report-root
       className="!rounded-lg !bg-paper/60 shadow-none space-y-5"
       aria-label="Water-plan report"
     >
@@ -132,7 +131,13 @@ export default function ReportView({ report, need, district, snapshot = {}, site
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => exportReportPdf(articleRef.current, `AquaSignal water plan — ${district}`)}
+          onClick={(e) =>
+            exportReportPdf(
+              e.currentTarget.closest('[data-report-root]') ||
+                document.querySelector('[data-report-root]'),
+              `AquaSignal water plan — ${district}`,
+            )
+          }
           title="Opens your browser print dialog — choose Save as PDF."
           className="!border-water/40 !bg-water/10 !text-water hover:!bg-water/20"
         >
