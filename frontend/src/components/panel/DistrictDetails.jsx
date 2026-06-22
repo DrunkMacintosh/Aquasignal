@@ -13,7 +13,7 @@ import { adminUnitNoun } from '../../lib/adminUnits.js';
 import AlertSubscribe from '../AlertSubscribe.jsx';
 import ExportButtons from '../ExportButtons.jsx';
 import ForecastChart from '../ForecastChart.jsx';
-import { RiskScoreCard } from '../ui';
+import { Button, MicroLabel, RiskScoreCard } from '../ui';
 import SatelliteObservations from '../SatelliteObservations.jsx';
 import Sparkline from '../Sparkline.jsx';
 import { PanelSkeleton } from '../Skeletons.jsx';
@@ -56,27 +56,23 @@ export default function DistrictDetails({ name, onPlanWithAi, onSeeHistory }) {
       )}
 
       {advisorConfig.data?.enabled && onPlanWithAi && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          fullWidth
           onClick={onPlanWithAi}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-water/40 bg-water/10 px-4 py-2.5 text-sm font-semibold text-water transition-colors hover:bg-water/15 focus-visible:outline-water"
+          className="border-water/40 bg-water/10 text-water hover:bg-water/15"
         >
           <span aria-hidden="true">✦</span> Plan your water use with AI
-        </button>
+        </Button>
       )}
 
       <section aria-label="6-month forecast">
         <div className="mb-2.5 flex items-baseline justify-between gap-3">
-          <h3 className="microlabel">6-month outlook ({unitNoun} average)</h3>
+          <MicroLabel as="h3">6-month outlook ({unitNoun} average)</MicroLabel>
           {onSeeHistory && monthly.length > 0 && (
-            <button
-              type="button"
-              onClick={onSeeHistory}
-              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-ink focus-visible:outline-water"
-            >
-              See history
-              <span aria-hidden="true">→</span>
-            </button>
+            <Button variant="secondary" size="sm" onClick={onSeeHistory} className="shrink-0">
+              See history <span aria-hidden="true">→</span>
+            </Button>
           )}
         </div>
         {forecast.isError ? (

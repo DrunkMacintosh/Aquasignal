@@ -1,3 +1,5 @@
+import MicroLabel from '../ui/MicroLabel.jsx';
+
 export default function SectionTitle({ children }) {
-  return <h3 className="microlabel mb-2.5">{children}</h3>;
+  return <MicroLabel as="h3" className="mb-2.5">{children}</MicroLabel>;
 }
