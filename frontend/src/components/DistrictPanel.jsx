@@ -10,6 +10,7 @@ import DistrictDetails from './panel/DistrictDetails.jsx';
 import MonthSnapshot from './panel/MonthSnapshot.jsx';
 import AdvisorPopout from './panel/AdvisorPopout.jsx';
 import HistoryPopout from './panel/HistoryPopout.jsx';
+import { Button, MicroLabel } from './ui';
 
 export default function DistrictPanel({ selection, month, onClose }) {
   const [advisorOpen, setAdvisorOpen] = useState(false);
@@ -68,16 +69,9 @@ export default function DistrictPanel({ selection, month, onClose }) {
           <h2 id="panel-title" className="truncate font-display text-xl font-semibold leading-tight">
             {title}
           </h2>
-          <p className="microlabel mt-1">{subtitle}</p>
+          <MicroLabel className="mt-1">{subtitle}</MicroLabel>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close detail panel"
-          className="shrink-0 rounded-lg border border-ink/10 px-2.5 py-1 text-lg leading-none text-ink-soft transition-colors hover:bg-paper hover:text-ink"
-        >
-          ×
-        </button>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close detail panel" className="shrink-0 !px-2.5 text-lg leading-none">×</Button>
       </header>
 
       <div className="panel-scroll min-h-0 flex-1 overflow-y-auto">
