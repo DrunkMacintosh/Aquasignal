@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { PASSWORD_MIN_CHARS, passwordIssue } from '../../lib/validation.js';
+import Field from '../ui/Field.jsx';
 
 export default function AuthForms() {
   const [mode, setMode] = useState('signin'); // 'signin' | 'register'
@@ -51,6 +52,7 @@ function SignInForm({ onSwitch }) {
           autoComplete="email"
           value={email}
           onChange={setEmail}
+          required
         />
         <Field
           id="signin-password"
@@ -59,6 +61,7 @@ function SignInForm({ onSwitch }) {
           autoComplete="current-password"
           value={password}
           onChange={setPassword}
+          required
         />
         <FormError message={error} />
         <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
@@ -119,6 +122,7 @@ function RegisterForm({ onSwitch }) {
           autoComplete="email"
           value={email}
           onChange={setEmail}
+          required
         />
         <Field
           id="register-password"
@@ -128,6 +132,7 @@ function RegisterForm({ onSwitch }) {
           value={password}
           onChange={setPassword}
           hint={`At least ${PASSWORD_MIN_CHARS} characters.`}
+          required
         />
         <Field
           id="register-confirm"
@@ -136,6 +141,7 @@ function RegisterForm({ onSwitch }) {
           autoComplete="new-password"
           value={confirm}
           onChange={setConfirm}
+          required
         />
         <FormError message={error} />
         <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
@@ -173,30 +179,6 @@ function AuthCard({ title, subtitle, switchPrompt, switchLabel, onSwitch, childr
   );
 }
 
-function Field({ id, label, type, autoComplete, value, onChange, hint }) {
-  return (
-    <div>
-      <label htmlFor={id} className="microlabel">
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        required={type !== 'text'}
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-        className="mt-1.5 w-full rounded-lg border border-ink/15 bg-surface px-3.5 py-2.5 text-sm focus-visible:outline-water"
-      />
-      {hint && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-ink-faint">
-          {hint}
-        </p>
-      )}
-    </div>
-  );
-}
 
 function FormError({ message }) {
   if (!message) return null;
