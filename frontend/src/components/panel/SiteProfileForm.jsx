@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { hasRequiredSiteInputs, siteFieldsFor } from '../../lib/siteProfile.js';
 import { needLabel } from '../../lib/advisor.js';
+import { Button, Card } from '../ui';
 
 export default function SiteProfileForm({ need, district, isSubmitting, error, onSubmit, onCancel }) {
   const fields = siteFieldsFor(need);
@@ -17,7 +18,7 @@ export default function SiteProfileForm({ need, district, isSubmitting, error, o
   }
 
   return (
-    <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">
+    <Card className="!rounded-lg !bg-paper/60 shadow-none">
       <p className="text-sm font-semibold">
         {needLabel(need)} · {district}
       </p>
@@ -34,7 +35,7 @@ export default function SiteProfileForm({ need, district, isSubmitting, error, o
         className="mt-3 space-y-3"
       >
         {fields.map((field) => (
-          <Field key={field.id} field={field} value={values[field.id] ?? ''} onChange={setField} disabled={isSubmitting} />
+          <SiteField key={field.id} field={field} value={values[field.id] ?? ''} onChange={setField} disabled={isSubmitting} />
         ))}
 
         <div>
@@ -63,7 +64,13 @@ export default function SiteProfileForm({ need, district, isSubmitting, error, o
         )}
 
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={!ready || isSubmitting} className="btn-primary !py-2 text-sm disabled:opacity-50">
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={!ready || isSubmitting}
+            className="!py-2 text-sm"
+          >
             {isSubmitting ? (
               <span className="flex items-center gap-1.5">
                 Analyzing <LoadingDots />
@@ -71,20 +78,20 @@ export default function SiteProfileForm({ need, district, isSubmitting, error, o
             ) : (
               'Generate report'
             )}
-          </button>
-          <button type="button" onClick={onCancel} className="text-xs font-semibold text-ink-soft hover:text-ink">
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </div>
         {!ready && (
           <p className="text-xs text-ink-soft">Fill the starred field to continue.</p>
         )}
       </form>
-    </div>
+    </Card>
   );
 }
 
-function Field({ field, value, onChange, disabled }) {
+function SiteField({ field, value, onChange, disabled }) {
   const id = `site-${field.id}`;
   return (
     <div>

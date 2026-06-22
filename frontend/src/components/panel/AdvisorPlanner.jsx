@@ -16,6 +16,7 @@ import { ADVISOR_NEEDS, buildSnapshot } from '../../lib/advisor.js';
 import { computeSiteMetrics } from '../../lib/siteProfile.js';
 import ReportView from './ReportView.jsx';
 import SiteProfileForm from './SiteProfileForm.jsx';
+import { Button, Card } from '../ui';
 
 export default function AdvisorPlanner({ district }) {
   // Build the data snapshot from the (already-cached) district queries, so the
@@ -66,13 +67,14 @@ export default function AdvisorPlanner({ district }) {
     return (
       <div className="space-y-2">
         <ReportView report={report} need={need} district={district} snapshot={snapshot} site={site} />
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={reset}
-          className="text-xs font-semibold text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+          className="underline-offset-2 hover:underline"
         >
           ← Start a new plan
-        </button>
+        </Button>
       </div>
     );
   }
@@ -92,7 +94,7 @@ export default function AdvisorPlanner({ district }) {
 
 function NeedPicker({ district, onPick }) {
   return (
-    <div className="rounded-lg border border-ink/10 bg-paper/60 p-4">
+    <Card className="!rounded-lg !bg-paper/60 shadow-none">
       <p className="text-sm font-semibold">Plan your water use with AI</p>
       <p className="mt-1 text-xs text-ink-soft">
         Pick a goal. The advisor reviews {district}'s risk, forecast, and recharge data, asks a
@@ -111,6 +113,6 @@ function NeedPicker({ district, onPick }) {
           </button>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
