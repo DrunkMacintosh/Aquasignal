@@ -4,20 +4,20 @@
 // marks the target; the bar turns amber when the current value is off-target.
 import { CHART } from '../../../lib/reportManifest.js';
 
-export default function KpiGauges({ metrics = [] }) {
+export default function KpiGauges({ metrics = [], animate = false }) {
   const rows = (metrics ?? []).filter((m) => m.label && m.value != null);
   if (!rows.length) return null;
 
   return (
     <ul className="space-y-3" aria-label="Key targets">
       {rows.map((m) => (
-        <Gauge key={m.label} metric={m} />
+        <Gauge key={m.label} metric={m} animate={animate} />
       ))}
     </ul>
   );
 }
 
-function Gauge({ metric }) {
+function Gauge({ metric, animate = false }) {
   const { label, value, target, unit, direction = 'lower_is_better' } = metric;
   const hasTarget = target != null;
   const onTrack = hasTarget
@@ -42,7 +42,10 @@ function Gauge({ metric }) {
         </span>
       </div>
       <div className="relative mt-1 h-2 rounded-full bg-water-wash" role="presentation">
-        <div className="h-full rounded-full" style={{ width: `${valuePct}%`, background: fill }} />
+        <div
+          className={`h-full rounded-full ${animate ? 'origin-left animate-grow-x' : ''}`}
+          style={{ width: `${valuePct}%`, background: fill }}
+        />
         {targetPct != null && (
           <span
             className="absolute top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded bg-ink"

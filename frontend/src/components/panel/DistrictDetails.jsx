@@ -41,7 +41,7 @@ export default function DistrictDetails({ name, onPlanWithAi, onSeeHistory }) {
   const latest = monthly[monthly.length - 1];
 
   return (
-    <div className="space-y-6 p-5">
+    <div className="stagger space-y-6 p-5">
       {latest ? (
         <RiskScoreCard
           risk={latest.risk}
@@ -78,14 +78,14 @@ export default function DistrictDetails({ name, onPlanWithAi, onSeeHistory }) {
         {forecast.isError ? (
           <p className="text-sm text-ink-soft">Forecast could not be loaded.</p>
         ) : (
-          <ForecastChart points={forecast.data?.forecast} isLoading={forecast.isPending} />
+          <ForecastChart points={forecast.data?.forecast} isLoading={forecast.isPending} animate />
         )}
       </section>
 
       {monthly.length > 0 && (
         <section aria-label="Risk history">
           <SectionTitle>Last {monthly.length} months</SectionTitle>
-          <Sparkline points={monthly} />
+          <Sparkline points={monthly} animate />
         </section>
       )}
 

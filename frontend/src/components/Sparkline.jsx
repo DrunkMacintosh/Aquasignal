@@ -5,7 +5,7 @@ import { CRITICAL_THRESHOLD, formatMonth, riskBand } from '../lib/risk.js';
 import { CHART } from '../lib/reportManifest.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
-export default function Sparkline({ points, isLoading }) {
+export default function Sparkline({ points, isLoading, animate = false }) {
   if (isLoading) return <ChartSkeleton height={72} />;
   if (!points?.length) {
     return <p className="text-sm text-ink-soft">No historical scores yet.</p>;
@@ -28,7 +28,7 @@ export default function Sparkline({ points, isLoading }) {
               stroke={CHART.ink}
               strokeWidth={1.75}
               dot={false}
-              isAnimationActive={false}
+              isAnimationActive={animate}
             />
           </LineChart>
         </ResponsiveContainer>

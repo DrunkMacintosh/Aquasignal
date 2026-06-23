@@ -30,7 +30,7 @@ export default function MonthSnapshot({ name, month, onBack }) {
   const observation = satellite.data?.observations?.find((row) => row.month === month);
 
   return (
-    <div className="space-y-6 p-5">
+    <div className="stagger space-y-6 p-5">
       <button
         type="button"
         onClick={onBack}

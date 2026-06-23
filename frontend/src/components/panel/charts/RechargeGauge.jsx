@@ -17,6 +17,7 @@ export default function RechargeGauge({
   rechargeValue = null,
   rechargeLabel = null,
   netInfiltrationMm = null,
+  animate = false,
 }) {
   const hasIndex = permeabilityIndex != null;
   if (!hasIndex && rechargeValue == null) return null;
@@ -48,7 +49,7 @@ export default function RechargeGauge({
                 background={{ fill: CHART.waterWash }}
                 dataKey="value"
                 cornerRadius={6}
-                isAnimationActive={false}
+                isAnimationActive={animate}
               />
             </RadialBarChart>
           </ResponsiveContainer>

@@ -33,7 +33,7 @@ import { ChartSkeleton } from './Skeletons.jsx';
 // month) the dots aid reading and keep an isolated point from vanishing.
 const MAX_MONTHS_WITH_DOTS = 36;
 
-export default function HistoryChart({ points, isLoading, onSelectMonth }) {
+export default function HistoryChart({ points, isLoading, onSelectMonth, animate = false }) {
   if (isLoading) return <ChartSkeleton height={300} />;
   if (!points?.length) {
     return (
@@ -125,7 +125,7 @@ export default function HistoryChart({ points, isLoading, onSelectMonth }) {
             // for shorter spans, where they don't crowd the line.
             dot={showDots ? { r: 2, fill: CHART.ink, strokeWidth: 0 } : false}
             activeDot={{ r: 4, fill: CHART.ink, strokeWidth: 0 }}
-            isAnimationActive={false}
+            isAnimationActive={animate}
             name="Observed risk"
           />
         </LineChart>

@@ -34,12 +34,12 @@ export default function PermeabilityCard({ data, isLoading, isError }) {
       <div className="px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-sm font-semibold">Soil permeability</p>
-          <p className="font-display text-lg font-semibold text-[#0E6E83]">
+          <p className="font-display text-lg font-semibold text-water">
             {cap(data.permeability_class)}
           </p>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink/10" aria-hidden="true">
-          <div className="h-full rounded-full bg-[#0E6E83]" style={{ width: `${pct}%` }} />
+          <div className="h-full origin-left rounded-full bg-water animate-grow-x" style={{ width: `${pct}%` }} />
         </div>
         <p className="microlabel mt-1.5">
           Ksat ≈ {data.soil_ksat_mm_hr?.toFixed(1)} mm/hr · index {data.permeability_index?.toFixed(2)}

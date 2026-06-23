@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { CHART } from '../../../lib/reportManifest.js';
 
-export default function RiskDriversBar({ drivers = [] }) {
+export default function RiskDriversBar({ drivers = [], animate = false }) {
   const data = (drivers ?? [])
     .filter((d) => d.label && Number(d.weight) > 0)
     .map((d) => ({ label: d.label, weight: Number(d.weight), note: d.note ?? '' }))
@@ -38,7 +38,7 @@ export default function RiskDriversBar({ drivers = [] }) {
             axisLine={false}
           />
           <Tooltip content={<DriverTooltip />} cursor={{ fill: 'rgba(11,31,51,0.05)' }} />
-          <Bar dataKey="weight" radius={[0, 4, 4, 0]} isAnimationActive={false} barSize={16}>
+          <Bar dataKey="weight" radius={[0, 4, 4, 0]} isAnimationActive={animate} barSize={16}>
             {data.map((row, i) => (
               <Cell key={row.label} fill={CHART.categorical[i % CHART.categorical.length]} />
             ))}

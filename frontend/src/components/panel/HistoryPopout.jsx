@@ -53,6 +53,7 @@ export default function HistoryPopout({ district, onClose, onSelectMonth, onBack
             points={monthly}
             isLoading={history.isPending}
             onSelectMonth={onSelectMonth}
+            animate
           />
         )}
       </div>

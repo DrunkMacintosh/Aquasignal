@@ -34,6 +34,24 @@ export default function ReportView({ report, need, district, snapshot = {}, site
   const manifest = manifestForNeed(need);
   const sections = manifest.sections.filter((s) => sectionHasData(s.key, report, snapshot));
 
+  // Charts animate when the report appears, but the PDF export must capture a
+  // static frame. Flipping `exporting` re-renders every chart with animation
+  // off (snapping it to its final state); we wait two frames for React to
+  // commit before html2canvas rasterizes the node.
+  const [exporting, setExporting] = useState(false);
+  async function handleExport(root, title) {
+    if (!root) return;
+    setExporting(true);
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+    try {
+      await exportReportPdf(root, title);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <Card
       as="article"
@@ -91,7 +109,7 @@ export default function ReportView({ report, need, district, snapshot = {}, site
           caption={section.caption}
           tag={section.source === 'ai' ? 'ai' : null}
         >
-          {renderChart(section.key, report, snapshot)}
+          {renderChart(section.key, report, snapshot, !exporting)}
         </ChartSection>
       ))}
 
@@ -128,7 +146,7 @@ export default function ReportView({ report, need, district, snapshot = {}, site
       {/* Action row — excluded from the exported PDF itself. */}
       <div className="flex flex-wrap items-center gap-2" data-export-exclude>
         <CopyButton text={reportToText(report, manifest, district, site)} />
-        <ExportPdfButton title={`AquaSignal water plan — ${district}`} />
+        <ExportPdfButton title={`AquaSignal water plan — ${district}`} onExport={handleExport} />
       </div>
     </Card>
   );
@@ -158,12 +176,12 @@ function sectionHasData(key, report, snapshot) {
   }
 }
 
-function renderChart(key, report, snapshot) {
+function renderChart(key, report, snapshot, animate) {
   switch (key) {
     case 'trajectory':
-      return <TrajectoryChart history={snapshot.history} forecast={snapshot.forecast} />;
+      return <TrajectoryChart history={snapshot.history} forecast={snapshot.forecast} animate={animate} />;
     case 'waterBalance':
-      return <WaterBalanceChart satellite={snapshot.satellite} />;
+      return <WaterBalanceChart satellite={snapshot.satellite} animate={animate} />;
     case 'recharge':
       return (
         <RechargeGauge
@@ -172,14 +190,15 @@ function renderChart(key, report, snapshot) {
           rechargeValue={snapshot.recharge_value}
           rechargeLabel={snapshot.recharge_label}
           netInfiltrationMm={snapshot.net_infiltration_mm}
+          animate={animate}
         />
       );
     case 'kpis':
-      return <KpiGauges metrics={report.metrics} />;
+      return <KpiGauges metrics={report.metrics} animate={animate} />;
     case 'allocation':
-      return <AllocationDonut allocation={report.allocation} />;
+      return <AllocationDonut allocation={report.allocation} animate={animate} />;
     case 'drivers':
-      return <RiskDriversBar drivers={report.risk_drivers} />;
+      return <RiskDriversBar drivers={report.risk_drivers} animate={animate} />;
     case 'priorityActions':
       return <PriorityActions actions={report.priority_actions} />;
     default:
@@ -248,15 +267,15 @@ function Bullets({ items = [] }) {
 // Downloads the report as a PDF file. Shows a "Generating…" state while
 // html2canvas + jsPDF (lazy-loaded) do their work. The report node is found via
 // the data-report-root hook on the click (read synchronously before any await).
-function ExportPdfButton({ title }) {
+function ExportPdfButton({ title, onExport }) {
   const [busy, setBusy] = useState(false);
-  async function handleExport(event) {
+  async function handleClick(event) {
     const root =
       event.currentTarget.closest('[data-report-root]') ||
       document.querySelector('[data-report-root]');
     setBusy(true);
     try {
-      await exportReportPdf(root, title);
+      await onExport(root, title);
     } catch {
       // Generation failed (e.g. an unsupported style); leave the report intact.
     } finally {
@@ -268,7 +287,7 @@ function ExportPdfButton({ title }) {
       variant="secondary"
       size="sm"
       disabled={busy}
-      onClick={handleExport}
+      onClick={handleClick}
       title="Download the report as a PDF file."
       className="!border-water/40 !bg-water/10 !text-water hover:!bg-water/20 disabled:opacity-60"
     >

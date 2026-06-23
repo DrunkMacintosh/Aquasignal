@@ -83,6 +83,11 @@ export default {
           '0%': { transform: 'translateX(-120%)' },
           '100%': { transform: 'translateX(120%)' },
         },
+        // Progress/meter bars growing in from the left.
+        'grow-x': {
+          from: { transform: 'scaleX(0)' },
+          to: { transform: 'scaleX(1)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.6s linear infinite',
@@ -92,6 +97,7 @@ export default {
         'slide-in-right': 'slide-in-right 280ms cubic-bezier(0.16,1,0.3,1) both',
         'glow-pulse': 'glow-pulse 2.4s ease-in-out infinite',
         scan: 'scan 1.8s cubic-bezier(0.45,0,0.55,1) infinite',
+        'grow-x': 'grow-x 800ms cubic-bezier(0.16,1,0.3,1) both',
       },
     },
   },

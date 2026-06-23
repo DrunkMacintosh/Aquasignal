@@ -14,7 +14,7 @@ import { CRITICAL_THRESHOLD, HIGH_THRESHOLD, shortMonth } from '../lib/risk.js';
 import { CHART } from '../lib/reportManifest.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
-export default function ForecastChart({ points, isLoading }) {
+export default function ForecastChart({ points, isLoading, animate = false }) {
   if (isLoading) return <ChartSkeleton />;
   if (!points?.length) {
     return (
@@ -69,7 +69,7 @@ export default function ForecastChart({ points, isLoading }) {
             stroke="none"
             fill={CHART.water}
             fillOpacity={0.14}
-            isAnimationActive={false}
+            isAnimationActive={animate}
             name="Likely range"
           />
           <Line
@@ -77,7 +77,7 @@ export default function ForecastChart({ points, isLoading }) {
             stroke={CHART.water}
             strokeWidth={2.5}
             dot={{ r: 3.5, fill: CHART.water, strokeWidth: 0 }}
-            isAnimationActive={false}
+            isAnimationActive={animate}
             name="Predicted risk"
           />
         </ComposedChart>

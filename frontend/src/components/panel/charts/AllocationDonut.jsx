@@ -5,7 +5,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { CHART, normalizeAllocation } from '../../../lib/reportManifest.js';
 
-export default function AllocationDonut({ allocation = [] }) {
+export default function AllocationDonut({ allocation = [], animate = false }) {
   const slices = normalizeAllocation(allocation);
   if (!slices.length) return null;
 
@@ -31,7 +31,7 @@ export default function AllocationDonut({ allocation = [] }) {
               paddingAngle={1.5}
               stroke={CHART.surface}
               strokeWidth={2}
-              isAnimationActive={false}
+              isAnimationActive={animate}
             >
               {data.map((slice) => (
                 <Cell key={slice.label} fill={slice.color} />

@@ -14,7 +14,7 @@ import {
 import { formatMonth, shortMonth } from '../../../lib/risk.js';
 import { CHART } from '../../../lib/reportManifest.js';
 
-export default function WaterBalanceChart({ satellite = [] }) {
+export default function WaterBalanceChart({ satellite = [], animate = false }) {
   const data = (satellite ?? [])
     .filter((m) => m.precipitation != null || m.evapotranspiration != null)
     .map((m) => ({
@@ -46,8 +46,8 @@ export default function WaterBalanceChart({ satellite = [] }) {
           />
           <Tooltip content={<BalanceTooltip />} cursor={{ fill: 'rgba(11,31,51,0.05)' }} />
           <Legend wrapperStyle={{ fontSize: 11, fontFamily: CHART.mono }} />
-          <Bar dataKey="precip" name="Precipitation" fill={CHART.water} radius={[2, 2, 0, 0]} isAnimationActive={false} />
-          <Bar dataKey="et" name="Evapotranspiration" fill="#E0A93B" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="precip" name="Precipitation" fill={CHART.water} radius={[2, 2, 0, 0]} isAnimationActive={animate} />
+          <Bar dataKey="et" name="Evapotranspiration" fill="#E0A93B" radius={[2, 2, 0, 0]} isAnimationActive={animate} />
         </BarChart>
       </ResponsiveContainer>
       <figcaption className="mt-1 text-[11px] text-ink-soft">

@@ -16,7 +16,7 @@ export default function CellDetails({ cell, month }) {
   const satellite = useCellSatellite(cell.cell_id);
 
   return (
-    <div className="space-y-6 p-5">
+    <div className="stagger space-y-6 p-5">
       <RiskScoreCard risk={cell.current_risk} trend={cell.trend} month={month} />
 
       <section aria-label="6-month forecast">
@@ -24,7 +24,7 @@ export default function CellDetails({ cell, month }) {
         {forecast.isError ? (
           <p className="text-sm text-ink-soft">Forecast could not be loaded.</p>
         ) : (
-          <ForecastChart points={forecast.data?.forecast} isLoading={forecast.isPending} />
+          <ForecastChart points={forecast.data?.forecast} isLoading={forecast.isPending} animate />
         )}
       </section>
 
@@ -33,7 +33,7 @@ export default function CellDetails({ cell, month }) {
         {history.isError ? (
           <p className="text-sm text-ink-soft">History could not be loaded.</p>
         ) : (
-          <Sparkline points={history.data?.history} isLoading={history.isPending} />
+          <Sparkline points={history.data?.history} isLoading={history.isPending} animate />
         )}
       </section>
 

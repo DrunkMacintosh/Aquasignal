@@ -14,7 +14,7 @@ import {
 import { CRITICAL_THRESHOLD, HIGH_THRESHOLD, formatMonth, shortMonth } from '../../../lib/risk.js';
 import { CHART } from '../../../lib/reportManifest.js';
 
-export default function TrajectoryChart({ history = [], forecast = [] }) {
+export default function TrajectoryChart({ history = [], forecast = [], animate = false }) {
   const past = (history ?? []).map((p) => ({
     month: p.month,
     label: shortMonth(p.month),
@@ -68,12 +68,12 @@ export default function TrajectoryChart({ history = [], forecast = [] }) {
               label={{ value: 'forecast →', position: 'insideTopLeft', fontSize: 9, fill: CHART.inkFaint }} />
           )}
           <Area dataKey="band" stroke="none" fill={CHART.water} fillOpacity={0.13}
-            isAnimationActive={false} name="Likely range" connectNulls />
+            isAnimationActive={animate} name="Likely range" connectNulls />
           <Line dataKey="observed" stroke={CHART.ink} strokeWidth={2} dot={false}
-            connectNulls={false} isAnimationActive={false} name="Observed" />
+            connectNulls={false} isAnimationActive={animate} name="Observed" />
           <Line dataKey="predicted" stroke={CHART.water} strokeWidth={2.5} strokeDasharray="4 3"
             dot={{ r: 3, fill: CHART.water, strokeWidth: 0 }} connectNulls
-            isAnimationActive={false} name="Forecast" />
+            isAnimationActive={animate} name="Forecast" />
         </ComposedChart>
       </ResponsiveContainer>
       <figcaption className="mt-1 text-[11px] text-ink-soft">
