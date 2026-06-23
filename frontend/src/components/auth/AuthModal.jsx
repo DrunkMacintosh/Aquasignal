@@ -32,7 +32,7 @@ export default function AuthModal({ onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label="Sign in to AquaSignal"
-        className="card relative max-h-[90vh] w-full max-w-sm overflow-y-auto p-6"
+        className="card corner-ticks relative max-h-[90vh] w-full max-w-sm overflow-y-auto p-6"
       >
         <button
           type="button"

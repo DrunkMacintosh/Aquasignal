@@ -44,7 +44,7 @@ export default function WaterBalanceChart({ satellite = [] }) {
             width={44}
             label={{ value: 'mm', angle: -90, position: 'insideLeft', fontSize: 10, fill: CHART.inkFaint }}
           />
-          <Tooltip content={<BalanceTooltip />} cursor={{ fill: 'rgba(28,43,51,0.04)' }} />
+          <Tooltip content={<BalanceTooltip />} cursor={{ fill: 'rgba(11,31,51,0.05)' }} />
           <Legend wrapperStyle={{ fontSize: 11, fontFamily: CHART.mono }} />
           <Bar dataKey="precip" name="Precipitation" fill={CHART.water} radius={[2, 2, 0, 0]} isAnimationActive={false} />
           <Bar dataKey="et" name="Evapotranspiration" fill="#E0A93B" radius={[2, 2, 0, 0]} isAnimationActive={false} />

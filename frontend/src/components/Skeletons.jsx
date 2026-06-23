@@ -1,25 +1,31 @@
-// Loading placeholders. The map skeleton mimics the survey-grid the real data
-// draws so the loaded state doesn't visually "jump".
+// Loading placeholders. The map skeleton mimics the survey grid the real data
+// draws so the loaded state doesn't visually "jump", with a cobalt scan sweep
+// for an instrument "acquiring" feel.
 
 export function MapSkeleton() {
   return (
     <div
-      className="absolute inset-0 z-10 flex items-center justify-center bg-paper"
+      className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden bg-paper"
       role="status"
       aria-label="Loading risk map"
     >
-      <svg className="absolute inset-0 h-full w-full opacity-[0.35]" aria-hidden="true">
+      <svg className="absolute inset-0 h-full w-full opacity-60" aria-hidden="true">
         <defs>
-          <pattern id="survey-grid" width="56" height="56" patternUnits="userSpaceOnUse">
-            <path d="M56 0H0V56" fill="none" stroke="#1C2B33" strokeOpacity="0.12" />
+          <pattern id="survey-grid" width="52" height="52" patternUnits="userSpaceOnUse">
+            <path d="M52 0H0V52" fill="none" stroke="#1F46E5" strokeOpacity="0.1" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#survey-grid)" />
       </svg>
-      <div className="card flex items-center gap-3 px-5 py-3">
-        <span className="h-3 w-3 animate-pulse rounded-full bg-water" aria-hidden="true" />
-        <span className="font-mono text-xs uppercase tracking-[0.18em] text-ink-soft">
-          Loading survey grid…
+      {/* Sweeping acquisition band */}
+      <div
+        className="absolute inset-y-0 left-0 w-1/2 animate-scan bg-gradient-to-r from-transparent via-water/12 to-transparent"
+        aria-hidden="true"
+      />
+      <div className="card corner-ticks flex items-center gap-3 px-5 py-3">
+        <span className="h-2.5 w-2.5 animate-glow-pulse rounded-full bg-water" aria-hidden="true" />
+        <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">
+          Acquiring survey grid…
         </span>
       </div>
     </div>

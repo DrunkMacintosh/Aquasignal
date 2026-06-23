@@ -57,16 +57,20 @@ export default function DistrictPanel({ selection, month, onClose }) {
     <aside
       role="dialog"
       aria-labelledby="panel-title"
-      className="fixed inset-x-0 bottom-0 z-30 flex max-h-[78vh] flex-col rounded-t-2xl border-t border-ink/10 bg-surface shadow-sheet animate-fade-up md:absolute md:inset-auto md:bottom-4 md:right-4 md:top-[5.5rem] md:max-h-none md:w-[400px] md:rounded-2xl md:border md:shadow-card"
+      className="glass-panel fixed inset-x-0 bottom-0 z-30 flex max-h-[78vh] flex-col rounded-t-2xl border-t border-ink/10 shadow-sheet animate-fade-up md:absolute md:inset-auto md:bottom-4 md:right-4 md:top-[5.5rem] md:max-h-none md:w-[400px] md:rounded-2xl md:border md:border-ink/10 md:shadow-card"
     >
       {/* Grab handle, mobile only */}
       <div className="flex justify-center pt-2 md:hidden" aria-hidden="true">
-        <span className="h-1 w-10 rounded-full bg-ink/20" />
+        <span className="h-1 w-10 rounded-full bg-water/40" />
       </div>
 
-      <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
+      <header className="tech-grid relative flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
+        <span
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-water/60 via-cyan/50 to-transparent"
+          aria-hidden="true"
+        />
         <div className="min-w-0">
-          <h2 id="panel-title" className="truncate font-display text-xl font-semibold leading-tight">
+          <h2 id="panel-title" className="truncate font-display text-xl font-semibold leading-tight tracking-tight">
             {title}
           </h2>
           <MicroLabel className="mt-1">{subtitle}</MicroLabel>

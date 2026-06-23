@@ -39,7 +39,7 @@ export default function WarmupBanner() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-ink px-4 py-2.5 text-white"
+      className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-ink via-water-deep to-ink px-4 py-2.5 text-white"
     >
       <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
       <p className="text-sm font-medium">

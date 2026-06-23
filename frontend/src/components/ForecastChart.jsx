@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { CRITICAL_THRESHOLD, HIGH_THRESHOLD, shortMonth } from '../lib/risk.js';
+import { CHART } from '../lib/reportManifest.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
 export default function ForecastChart({ points, isLoading }) {
@@ -39,43 +40,43 @@ export default function ForecastChart({ points, isLoading }) {
             // which keeps the last tick and drops the colliding second-to-last one —
             // in a 6-month window that silently hides the 5th month's label.
             interval={0}
-            tick={{ fontSize: 11, fontFamily: '"IBM Plex Mono", monospace', fill: '#51626C' }}
+            tick={{ fontSize: 11, fontFamily: CHART.mono, fill: CHART.inkSoft }}
             tickLine={false}
-            axisLine={{ stroke: 'rgba(28,43,51,0.18)' }}
+            axisLine={{ stroke: CHART.axis }}
           />
           <YAxis
             domain={[0, 100]}
             ticks={[0, 25, 50, 75, 100]}
-            tick={{ fontSize: 11, fontFamily: '"IBM Plex Mono", monospace', fill: '#51626C' }}
+            tick={{ fontSize: 11, fontFamily: CHART.mono, fill: CHART.inkSoft }}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip content={<ForecastTooltip />} />
           <ReferenceLine
             y={HIGH_THRESHOLD}
-            stroke="#FF5722"
+            stroke={CHART.risk.high}
             strokeDasharray="5 4"
             label={{ value: 'High', position: 'insideTopRight', fontSize: 10, fill: '#8C2A0D' }}
           />
           <ReferenceLine
             y={CRITICAL_THRESHOLD}
-            stroke="#B71C1C"
+            stroke={CHART.risk.critical}
             strokeDasharray="5 4"
-            label={{ value: 'Critical', position: 'insideTopRight', fontSize: 10, fill: '#B71C1C' }}
+            label={{ value: 'Critical', position: 'insideTopRight', fontSize: 10, fill: CHART.risk.critical }}
           />
           <Area
             dataKey="band"
             stroke="none"
-            fill="#0E6E83"
+            fill={CHART.water}
             fillOpacity={0.14}
             isAnimationActive={false}
             name="Likely range"
           />
           <Line
             dataKey="predicted"
-            stroke="#0E6E83"
+            stroke={CHART.water}
             strokeWidth={2.5}
-            dot={{ r: 3.5, fill: '#0E6E83', strokeWidth: 0 }}
+            dot={{ r: 3.5, fill: CHART.water, strokeWidth: 0 }}
             isAnimationActive={false}
             name="Predicted risk"
           />

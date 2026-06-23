@@ -25,6 +25,7 @@ import {
   riskBand,
   shortMonth,
 } from '../lib/risk.js';
+import { CHART } from '../lib/reportManifest.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
 // Above this many actual observations the dots crowd the line, so we drop them
@@ -86,35 +87,35 @@ export default function HistoryChart({ points, isLoading, onSelectMonth }) {
             // Thin the labels so a 24-month axis stays readable instead of a
             // wall of overlapping ticks.
             interval={historyTickInterval(data.length)}
-            tick={{ fontSize: 11, fontFamily: '"IBM Plex Mono", monospace', fill: '#51626C' }}
+            tick={{ fontSize: 11, fontFamily: CHART.mono, fill: CHART.inkSoft }}
             tickLine={false}
-            axisLine={{ stroke: 'rgba(28,43,51,0.18)' }}
+            axisLine={{ stroke: CHART.axis }}
           />
           <YAxis
             domain={[0, 100]}
             ticks={[0, 25, 50, 75, 100]}
-            tick={{ fontSize: 11, fontFamily: '"IBM Plex Mono", monospace', fill: '#51626C' }}
+            tick={{ fontSize: 11, fontFamily: CHART.mono, fill: CHART.inkSoft }}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip content={<HistoryTooltip />} />
           <ReferenceLine
             y={HIGH_THRESHOLD}
-            stroke="#FF5722"
+            stroke={CHART.risk.high}
             strokeDasharray="5 4"
             label={{ value: 'High', position: 'insideTopRight', fontSize: 10, fill: '#8C2A0D' }}
           />
           <ReferenceLine
             y={CRITICAL_THRESHOLD}
-            stroke="#B71C1C"
+            stroke={CHART.risk.critical}
             strokeDasharray="5 4"
-            label={{ value: 'Critical', position: 'insideTopRight', fontSize: 10, fill: '#B71C1C' }}
+            label={{ value: 'Critical', position: 'insideTopRight', fontSize: 10, fill: CHART.risk.critical }}
           />
           <Line
             dataKey="risk"
-            // Observed history reads as ink, mirroring the sparkline — the teal
+            // Observed history reads as ink, mirroring the sparkline — the cobalt
             // line elsewhere always means *forecast*.
-            stroke="#1C2B33"
+            stroke={CHART.ink}
             strokeWidth={2}
             // Leave unscored months as gaps rather than drawing a straight line
             // across them — a bridged line would imply data we don't have.
@@ -122,8 +123,8 @@ export default function HistoryChart({ points, isLoading, onSelectMonth }) {
             // Small dots so a single isolated month (a gap on both sides draws
             // no line segment) is still visible instead of vanishing — but only
             // for shorter spans, where they don't crowd the line.
-            dot={showDots ? { r: 2, fill: '#1C2B33', strokeWidth: 0 } : false}
-            activeDot={{ r: 4, fill: '#1C2B33', strokeWidth: 0 }}
+            dot={showDots ? { r: 2, fill: CHART.ink, strokeWidth: 0 } : false}
+            activeDot={{ r: 4, fill: CHART.ink, strokeWidth: 0 }}
             isAnimationActive={false}
             name="Observed risk"
           />

@@ -37,7 +37,7 @@ export default function RiskDriversBar({ drivers = [] }) {
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip content={<DriverTooltip />} cursor={{ fill: 'rgba(28,43,51,0.04)' }} />
+          <Tooltip content={<DriverTooltip />} cursor={{ fill: 'rgba(11,31,51,0.05)' }} />
           <Bar dataKey="weight" radius={[0, 4, 4, 0]} isAnimationActive={false} barSize={16}>
             {data.map((row, i) => (
               <Cell key={row.label} fill={CHART.categorical[i % CHART.categorical.length]} />

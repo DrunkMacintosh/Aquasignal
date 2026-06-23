@@ -2,6 +2,7 @@
 // the timeline plus the latest reading as a colour-coded figure.
 import { Line, LineChart, ReferenceLine, ResponsiveContainer } from 'recharts';
 import { CRITICAL_THRESHOLD, formatMonth, riskBand } from '../lib/risk.js';
+import { CHART } from '../lib/reportManifest.js';
 import { ChartSkeleton } from './Skeletons.jsx';
 
 export default function Sparkline({ points, isLoading }) {
@@ -21,10 +22,10 @@ export default function Sparkline({ points, isLoading }) {
       <div className="h-[64px] min-w-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 6, right: 4, bottom: 6, left: 4 }}>
-            <ReferenceLine y={CRITICAL_THRESHOLD} stroke="#B71C1C" strokeOpacity={0.35} strokeDasharray="3 3" />
+            <ReferenceLine y={CRITICAL_THRESHOLD} stroke={CHART.risk.critical} strokeOpacity={0.35} strokeDasharray="3 3" />
             <Line
               dataKey="risk"
-              stroke="#1C2B33"
+              stroke={CHART.ink}
               strokeWidth={1.75}
               dot={false}
               isAnimationActive={false}

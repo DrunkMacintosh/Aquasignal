@@ -12,10 +12,10 @@ export default function SegmentedControl({ options, value, onChange, label }) {
           type="button"
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors ${
+          className={`rounded-[0.625rem] px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
             value === option.value
-              ? 'bg-ink text-white'
-              : 'text-ink-soft hover:bg-paper hover:text-ink'
+              ? 'bg-gradient-to-b from-[#2a52f0] to-water text-white shadow-[0_6px_18px_-8px_rgba(31,70,229,0.7)]'
+              : 'text-ink-soft hover:bg-water-wash hover:text-water-deep'
           }`}
         >
           {option.label}

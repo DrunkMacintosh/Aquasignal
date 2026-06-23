@@ -7,7 +7,7 @@ export default function RiskScoreCard({ risk, trend, month, label = 'Current ris
 
   return (
     <div
-      className="overflow-hidden rounded-xl border border-ink/10"
+      className="overflow-hidden rounded-[0.875rem] border border-ink/10 shadow-card"
       aria-label={`Current risk ${Number(risk).toFixed(0)} out of 100, ${band.label}.`}
     >
       <div

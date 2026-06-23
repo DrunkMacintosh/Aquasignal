@@ -48,6 +48,23 @@ const SATELLITE_STYLE = {
       maxzoom: 19,
       attribution: 'Streets © Esri, HERE, Garmin, OpenStreetMap contributors',
     },
+    // Pale cartographic basemap for the "Atlas" toggle — the daylight-clean
+    // alternative to satellite, so the risk choropleth reads at maximum
+    // contrast. Split into a base + reference (labels) like the satellite set.
+    'esri-light': {
+      type: 'raster',
+      tiles: [ESRI_TILE('Canvas/World_Light_Gray_Base')],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution: 'Light Gray Canvas © Esri, HERE, Garmin, FAO, NOAA, USGS',
+    },
+    'esri-light-ref': {
+      type: 'raster',
+      tiles: [ESRI_TILE('Canvas/World_Light_Gray_Reference')],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution: 'Labels &amp; boundaries © Esri',
+    },
   },
   layers: [
     { id: 'basemap-imagery', type: 'raster', source: 'esri-imagery' },
@@ -60,16 +77,35 @@ const SATELLITE_STYLE = {
       source: 'esri-street',
       layout: { visibility: 'none' },
     },
+    // Pale cartographic base for the Atlas toggle. Below the reference anchor
+    // (and thus below the risk layers inserted before it), so the choropleth
+    // sits on top.
+    {
+      id: 'basemap-light',
+      type: 'raster',
+      source: 'esri-light',
+      layout: { visibility: 'none' },
+    },
     // Risk layers are inserted before this one, so place names and admin
     // boundaries stay readable above the choropleth.
     { id: 'basemap-reference', type: 'raster', source: 'esri-reference' },
+    // Atlas place labels render above the choropleth, mirroring the satellite
+    // reference layer. Toggled together with the pale base.
+    {
+      id: 'basemap-light-ref',
+      type: 'raster',
+      source: 'esri-light-ref',
+      layout: { visibility: 'none' },
+    },
   ],
 };
 const ANCHOR_LAYER_ID = 'basemap-reference';
 // Satellite basemap layers, hidden as a group when the roads view swaps in the
-// street basemap.
+// street basemap or the Atlas toggle swaps in the pale canvas.
 const SATELLITE_BASEMAP_LAYERS = ['basemap-imagery', 'basemap-reference'];
 const STREET_BASEMAP_LAYER = 'basemap-street';
+// Pale cartographic basemap layers (base + labels), shown when basemap='atlas'.
+const ATLAS_BASEMAP_LAYERS = ['basemap-light', 'basemap-light-ref'];
 
 const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
 const MEKONG_DELTA_CENTER = [105.8, 9.8];
@@ -110,6 +146,7 @@ export default function RiskMap({
   gridData,
   districtData,
   view, // 'districts' | 'grid' | 'roads'
+  basemap, // 'satellite' | 'atlas'
   month,
   selectedCellId,
   selectedDistrict,
@@ -126,7 +163,7 @@ export default function RiskMap({
   // Mirror reactive props into a ref so the once-registered map handlers
   // always read current values.
   const propsRef = useRef({});
-  propsRef.current = { view, onSelectCell, onSelectDistrict };
+  propsRef.current = { view, basemap, onSelectCell, onSelectDistrict };
 
   const clearHover = () => {
     const map = mapRef.current;
@@ -152,7 +189,7 @@ export default function RiskMap({
     map.on('load', () => {
       addRiskLayers(map, GRID, { outlineOpacity: 0.18, outlineWidth: 0.5 });
       addRiskLayers(map, DISTRICTS, { outlineOpacity: 0.5, outlineWidth: 1.25 });
-      applyViewVisibility(map, propsRef.current.view);
+      applyViewVisibility(map, propsRef.current.view, propsRef.current.basemap);
       setIsReady(true);
     });
 
@@ -204,13 +241,13 @@ export default function RiskMap({
 
   useEffect(() => {
     if (!isReady) return;
-    applyViewVisibility(mapRef.current, view);
+    applyViewVisibility(mapRef.current, view, basemap);
     // The hidden layer never fires mouseleave, so its hover state must be
     // dropped here or the feature comes back still highlighted.
     clearHover();
     setTooltip(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, view]);
+  }, [isReady, view, basemap]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -274,22 +311,25 @@ function addRiskLayers(map, config, { outlineOpacity, outlineWidth }) {
       type: 'line',
       source: config.source,
       filter: ['==', ['get', config.promoteId], ''],
-      paint: { 'line-color': '#1C2B33', 'line-width': 2.5 },
+      paint: { 'line-color': '#1F46E5', 'line-width': 3 },
     },
     ANCHOR_LAYER_ID,
   );
 }
 
-function applyViewVisibility(map, view) {
+function applyViewVisibility(map, view, basemap) {
   if (!map) return;
   const setVisibility = (id, shown) => {
     if (map.getLayer(id)) {
       map.setLayoutProperty(id, 'visibility', shown ? 'visible' : 'none');
     }
   };
-  // Basemap: satellite for the risk views, the street basemap for roads.
+  // Basemap precedence: the roads view always brings its own street basemap;
+  // otherwise the Atlas toggle picks the pale canvas over satellite imagery.
   const isRoads = view === 'roads';
-  SATELLITE_BASEMAP_LAYERS.forEach((id) => setVisibility(id, !isRoads));
+  const isAtlas = basemap === 'atlas' && !isRoads;
+  SATELLITE_BASEMAP_LAYERS.forEach((id) => setVisibility(id, !isRoads && !isAtlas));
+  ATLAS_BASEMAP_LAYERS.forEach((id) => setVisibility(id, isAtlas));
   setVisibility(STREET_BASEMAP_LAYER, isRoads);
   Object.values(GRID.layers).forEach((id) => setVisibility(id, view === 'grid'));
   // The district choropleth backs both its own view and the roads view — in

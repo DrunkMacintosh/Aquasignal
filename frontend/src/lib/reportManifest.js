@@ -10,31 +10,31 @@
 // measurement). Keys must match the switch in ReportView.jsx.
 
 // Brand-aligned chart tokens (mirror tailwind.config.js — recharts needs raw
-// hex, not CSS classes).
+// hex, not CSS classes). "Daylight Lab" theme: cool ink, electric cobalt water.
 export const CHART = {
-  ink: '#1C2B33',
-  inkSoft: '#51626C',
-  inkFaint: '#8B98A0',
-  water: '#0E6E83',
-  waterDeep: '#0A4F5E',
-  waterWash: '#E3EEF0',
-  paper: '#F4F1E9',
-  surface: '#FDFCF7',
-  grid: 'rgba(28,43,51,0.10)',
-  axis: 'rgba(28,43,51,0.18)',
-  mono: '"IBM Plex Mono", monospace',
+  ink: '#0B1F33',
+  inkSoft: '#46586C',
+  inkFaint: '#8493A6',
+  water: '#1F46E5',
+  waterDeep: '#1531B0',
+  waterWash: '#E9EDFF',
+  paper: '#E9EEF5',
+  surface: '#FBFCFE',
+  grid: 'rgba(11,31,51,0.08)',
+  axis: 'rgba(11,31,51,0.16)',
+  mono: '"JetBrains Mono", monospace',
   risk: { low: '#4CAF50', medium: '#FFC107', high: '#FF5722', critical: '#B71C1C' },
-  // Categorical ramp for donut slices / driver bars — distinct hues that still
-  // sit in the warm "survey ledger" world rather than clashing primaries.
+  // Categorical ramp for donut slices / driver bars — cool, cobalt-led hues
+  // that sit in the Daylight Lab world, with two warm accents for separation.
   categorical: [
-    '#0E6E83', // water
-    '#3E9A8F', // teal-green
-    '#7BB36F', // sage
-    '#E0A93B', // ochre
-    '#C8612E', // terracotta
-    '#9B3B4E', // wine
-    '#5E548E', // muted violet
-    '#8B98A0', // slate (overflow)
+    '#1F46E5', // cobalt
+    '#0AA2C7', // cyan
+    '#16A38C', // teal-green
+    '#7A5AF0', // indigo
+    '#E0A93B', // amber accent
+    '#E2587A', // rose accent
+    '#5B8DEF', // sky
+    '#8493A6', // slate (overflow)
   ],
 };
 

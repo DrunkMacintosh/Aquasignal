@@ -10,6 +10,12 @@
   }
   body {
     @apply bg-paper font-body text-ink antialiased;
+    /* Cool daylight atmosphere: a soft overhead light wash over the canvas so
+       non-map surfaces (panel, modal, errors) never read as a flat fill. */
+    background-image:
+      radial-gradient(120% 90% at 50% -10%, rgba(31, 70, 229, 0.08), transparent 60%),
+      radial-gradient(90% 70% at 100% 0%, rgba(10, 162, 199, 0.06), transparent 55%);
+    background-attachment: fixed;
   }
   :focus-visible {
     outline: 2px solid theme('colors.water.DEFAULT');
@@ -21,26 +27,100 @@
 }
 
 @layer components {
+  /* Canonical floating surface: frosted glass with a hairline edge and a lit
+     top highlight. Everything that floats over the map (brand, status, legend,
+     view switch, tooltip, modal) shares this material. */
   .card {
-    @apply rounded-xl border border-ink/10 bg-surface shadow-card;
+    position: relative;
+    border-radius: 0.875rem;
+    background: rgba(251, 252, 254, 0.72);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(11, 31, 51, 0.08);
+    box-shadow: theme('boxShadow.glass');
   }
+
+  /* A more opaque variant for dense, read-heavy surfaces (the detail panel,
+     charts) where text must stay crisp over busy satellite imagery. */
+  .glass-panel {
+    background: rgba(249, 251, 254, 0.92);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+  }
+
+  /* Faint blueprint grid — instrument atmosphere for recessed surfaces. */
+  .tech-grid {
+    background-image:
+      linear-gradient(to right, rgba(11, 31, 51, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(11, 31, 51, 0.045) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  /* Precision corner ticks (top-left + bottom-right) for hero instrument
+     panels. Purely decorative. */
+  .corner-ticks::before,
+  .corner-ticks::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: theme('colors.water.DEFAULT');
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .corner-ticks::before {
+    top: 7px;
+    left: 7px;
+    border-top: 1.5px solid;
+    border-left: 1.5px solid;
+  }
+  .corner-ticks::after {
+    right: 7px;
+    bottom: 7px;
+    border-bottom: 1.5px solid;
+    border-right: 1.5px solid;
+  }
+
   .microlabel {
-    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft;
+    @apply font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft;
   }
+
   .skeleton {
-    @apply relative overflow-hidden rounded-md bg-ink/[0.07];
+    @apply relative overflow-hidden rounded-md;
+    background: rgba(11, 31, 51, 0.06);
   }
   .skeleton::after {
     content: '';
     @apply absolute inset-0 animate-shimmer;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
     background-size: 400px 100%;
   }
+
+  /* Electric cobalt primary action: subtle vertical gradient, crisp edge,
+     and a glow + lift on hover. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-water px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-water-deep focus-visible:outline-water disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[0.625rem] px-4 py-2.5 text-sm font-semibold text-white transition-all focus-visible:outline-water disabled:cursor-not-allowed disabled:opacity-50;
+    background-image: linear-gradient(180deg, #2a52f0, theme('colors.water.DEFAULT'));
+    box-shadow: 0 1px 2px rgba(11, 31, 51, 0.18), 0 8px 20px -10px rgba(31, 70, 229, 0.6);
   }
+  .btn-primary:hover:not(:disabled) {
+    background-image: linear-gradient(180deg, theme('colors.water.DEFAULT'), theme('colors.water.deep'));
+    box-shadow: theme('boxShadow.glow');
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink/15 bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[0.625rem] border border-ink/15 px-4 py-2.5 text-sm font-semibold text-ink transition-all focus-visible:outline-water disabled:cursor-not-allowed disabled:opacity-50;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    @apply border-water/45 text-water-deep;
+    background: theme('colors.water.wash');
   }
 }
 
@@ -48,13 +128,42 @@
   width: 8px;
 }
 .panel-scroll::-webkit-scrollbar-thumb {
-  background: rgba(28, 43, 51, 0.18);
+  background: rgba(31, 70, 229, 0.28);
   border-radius: 4px;
 }
+.panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 70, 229, 0.45);
+}
 
-/* Keep MapLibre UI quiet so it sits inside the ledger aesthetic. */
+/* Bring MapLibre's native chrome into the Daylight Lab material: frosted
+   glass groups, cobalt hover, restrained attribution. */
+.maplibregl-ctrl-group {
+  background: rgba(251, 252, 254, 0.78) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(11, 31, 51, 0.08) !important;
+  border-radius: 0.625rem !important;
+  box-shadow: 0 1px 2px rgba(11, 31, 51, 0.06), 0 16px 36px -20px rgba(11, 31, 51, 0.3) !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(11, 31, 51, 0.08) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: rgba(31, 70, 229, 0.1) !important;
+}
 .maplibregl-ctrl-attrib {
   font-size: 10px;
+  background: rgba(251, 252, 254, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 8px 0 0 0;
+}
+.maplibregl-ctrl-attrib a {
+  color: theme('colors.ink.soft');
 }
 
 @media (prefers-reduced-motion: reduce) {
