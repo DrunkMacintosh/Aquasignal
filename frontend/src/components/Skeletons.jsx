@@ -24,7 +24,7 @@ export function MapSkeleton() {
       />
       <div className="card corner-ticks flex items-center gap-3 px-5 py-3">
         <span className="h-2.5 w-2.5 animate-glow-pulse rounded-full bg-water" aria-hidden="true" />
-        <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">
+        <span className="text-xs font-semibold tracking-[0.01em] text-ink-soft">
           Acquiring survey grid…
         </span>
       </div>

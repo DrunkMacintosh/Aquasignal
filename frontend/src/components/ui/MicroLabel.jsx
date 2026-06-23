@@ -1,8 +1,10 @@
-// IBM Plex Mono, 10px, uppercase, wide tracking, soft ink — the connective
-// tissue of the survey-ledger look (section eyebrows, field labels, captions).
+// Small eyebrow/label style — the connective tissue of the UI (section
+// eyebrows, field labels, captions). Soft sans (Hanken Grotesk), sentence case,
+// gentle tracking; defined once as `.microlabel` in index.css so every label
+// stays in sync.
 export default function MicroLabel({ children, as: Tag = 'p', className = '', ...rest }) {
   return (
-    <Tag className={`font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft ${className}`} {...rest}>
+    <Tag className={`microlabel ${className}`} {...rest}>
       {children}
     </Tag>
   );

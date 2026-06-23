@@ -15,7 +15,7 @@ export default function RiskScoreCard({ risk, trend, month, label = 'Current ris
         style={{ backgroundColor: band.color, color: band.onColor }}
       >
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">
+          <p className="text-[11px] font-semibold tracking-[0.01em] opacity-80">
             {label}
           </p>
           <p className="font-mono text-5xl font-semibold leading-none tracking-tight">

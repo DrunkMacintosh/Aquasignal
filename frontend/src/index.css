@@ -82,7 +82,9 @@
   }
 
   .microlabel {
-    @apply font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft;
+    /* Soft sans eyebrow/label style (was uppercase monospace). Sentence case,
+       gentle tracking — reads cleaner and less "terminal" than the old mono. */
+    @apply font-body text-[11px] font-semibold tracking-[0.01em] text-ink-soft;
   }
 
   .skeleton {
