@@ -22,7 +22,7 @@ export const CHART = {
   surface: '#FBFCFE',
   grid: 'rgba(11,31,51,0.08)',
   axis: 'rgba(11,31,51,0.16)',
-  mono: '"JetBrains Mono", monospace',
+  mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   risk: { low: '#4CAF50', medium: '#FFC107', high: '#FF5722', critical: '#B71C1C' },
   // Categorical ramp for donut slices / driver bars — cool, cobalt-led hues
   // that sit in the Daylight Lab world, with two warm accents for separation.

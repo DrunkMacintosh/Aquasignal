@@ -38,9 +38,10 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Archivo"', 'system-ui', 'sans-serif'],
-        body: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        // Common, native system fonts — familiar everywhere, no webfont load.
+        display: ['system-ui', '-apple-system', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        body: ['system-ui', '-apple-system', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
         // Cool, crisp shadows: a tight contact line plus a soft diffuse lift.
